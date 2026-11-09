@@ -98,6 +98,7 @@ nav { display: flex; align-items: center; gap: clamp(12px, 2.4vw, 30px); }
 .steps p { color: var(--muted); font-size: .91rem; }
 .site-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 20px 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .83rem; }
 .footer-brand { font-size: .93rem; color: var(--text); }
+.site-footer .credit a { color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .play-shell { max-width: 760px; padding-block: 27px 48px; }
 .play-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
 .back-link { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 700; font-size: .94rem; padding-block: 5px; }
@@ -241,7 +242,8 @@ input[type="file"] { padding: 7px; }
   .round-link { font-size: .85rem; padding-left: 3px; gap: 2px; }
   .how { padding-block: 20px; margin-top: 22px; }
   .steps { grid-template-columns: 1fr; gap: 11px; }
-  .site-footer > span { display: none; }
+  .site-footer { flex-wrap: wrap; }
+  .site-footer .credit { order: 3; flex-basis: 100%; text-align: center; }
   .play-shell { padding-top: 14px; }
   .options { grid-template-columns: 1fr; }
   .option { min-height: 48px; }
