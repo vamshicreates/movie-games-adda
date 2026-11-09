@@ -83,7 +83,27 @@ const photoNames = {
     "Sharwanand",
     "Adivi Sesh",
     "Nikhil Siddharth",
-    "Sundeep Kishan"
+    "Sundeep Kishan",
+    "Chiranjeevi",
+    "Venkatesh Daggubati",
+    "Akhil Akkineni",
+    "Ram Pothineni",
+    "Nandamuri Kalyan Ram",
+    "Siddharth",
+    "Gopichand",
+    "Vishwak Sen",
+    "Sunil",
+    "Vishnu Manchu",
+    "Naga Shaurya",
+    "Aadi",
+    "Manoj Kumar Manchu",
+    "Sudheer Babu Posani",
+    "Brahmanandam",
+    "Jagapathi Babu",
+    "Meka Srikanth",
+    "Sayaji Shinde",
+    "Kota Srinivasa Rao",
+    "Krishna Murali Posani"
   ],
   "heroine": [
     "Samantha Ruth Prabhu",
@@ -105,7 +125,17 @@ const photoNames = {
     "Anupama Parameswaran",
     "Mrunal Thakur",
     "Nabha Natesh",
-    "Shriya Saran"
+    "Shriya Saran",
+    "Shruti Haasan",
+    "Nivetha Thomas",
+    "Nidhhi Agerwal",
+    "Krithi Shetty",
+    "Aishwarya Rajesh",
+    "Anu Emmanuel",
+    "Regena Cassandrra",
+    "Lavanya Tripathi",
+    "Samyuktha Menon",
+    "Sai Pallavi"
   ]
 };
 
@@ -163,7 +193,7 @@ export function starterAliases(answer) {
 
 function photoSets() {
   const titles = { hero: 'Tollywood Leading Men', heroine: 'Tollywood Leading Women' };
-  return Object.entries(photoNames).flatMap(([mode, all]) => [0, 1].map(part => {
+  return Object.entries(photoNames).flatMap(([mode, all]) => Array.from({ length: Math.ceil(all.length / 10) }, (_, part) => {
     const names = all.slice(part * 10, part * 10 + 10);
     return {
       id: `starter-${mode}-${part + 1}`, industry: 'tollywood', mode, title: `Level ${part + 1}`, starter: true,

@@ -1,6 +1,6 @@
 # Movie Games Adda
 
-A black-and-red film quiz for phones and laptops. The Tollywood launch has one ten-question set each for Frames, Audio, Lyrics, Emojis, Hero, Heroine, Badly Explained Plot, and Guess the Meme. Players choose multiple choice or typed answers when starting a round.
+A black-and-red film quiz for phones and laptops. The Tollywood launch has one ten-question set each for Frames, Lyrics, Emojis, Badly Explained Plot, and Guess the Meme as coming soon, plus live Guess the Actor, Guess the Actress and Guess the Song games with ten-question levels. Players choose multiple choice or typed answers when starting a round.
 
 ## Run locally
 

@@ -51,7 +51,7 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
   const catalog = await player('/api/catalog');
   assert.deepEqual(catalog.industries, [{ id: 'tollywood', name: 'Tollywood' }]);
   assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot', 'song']);
-  assert(catalog.counts.every(count => count.live === ({ hero: 2, heroine: 2, song: 9 }[count.mode] ?? 1)));
+  assert(catalog.counts.every(count => count.live === ({ hero: 4, heroine: 3, song: 9 }[count.mode] ?? 1)));
   const start = { industry: 'tollywood', mode: 'emoji' };
   let round = await player('/api/rounds', start, 201);
   const path = `/api/rounds/${round.id}`;
@@ -215,7 +215,7 @@ test('hero and heroine rounds are levels too, unlocking in order', async t => {
   const player = client();
   for (const mode of ['hero', 'heroine']) {
     const levels = () => player('/api/catalog').then(c => c.levels.filter(l => l.mode === mode));
-    assert.deepEqual((await levels()).map(l => l.state), ['open', 'locked']);
+    assert.deepEqual((await levels()).map(l => l.state), (mode === 'hero' ? ['open', 'locked', 'locked', 'locked'] : ['open', 'locked', 'locked']));
     await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 409);
     let round = await player('/api/rounds', { industry: 'tollywood', mode }, 201);
     assert.equal(round.level, 1);
@@ -225,9 +225,9 @@ test('hero and heroine rounds are levels too, unlocking in order', async t => {
       round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
     }
     assert.equal(round.score, 10);
-    assert.deepEqual((await levels()).map(l => l.state), ['done', 'open']);
+    assert.deepEqual((await levels()).map(l => l.state).slice(0, 2), ['done', 'open']);
     round = await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 201);
     assert.equal(round.level, 2);
-    assert.equal(round.nextLevel, null);
+    assert.equal(round.nextLevel, 3);
   }
 });
