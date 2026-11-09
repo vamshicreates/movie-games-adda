@@ -259,7 +259,7 @@ input[type="file"] { padding: 7px; }
 
 /* Guess the Hero / Heroine: blurred photo, countdown, self-scored reveal */
 .clue-photo { position: relative; display: grid; place-items: center; overflow: hidden; background: #100b0f; border-radius: 10px; margin: 0; }
-.clue-photo img { display: block; width: 100%; max-height: 430px; object-fit: contain; filter: blur(4px) saturate(.95); transform: scale(1.03); transition: filter .6s ease, transform .6s ease; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.clue-photo img { display: block; width: 100%; max-height: 430px; object-fit: contain; filter: blur(14px) saturate(.95); transform: scale(1.03); transition: filter .6s ease, transform .6s ease; user-select: none; -webkit-user-drag: none; pointer-events: none; }
 .clue-photo.is-revealed img { filter: none; transform: none; }
 .photo-timer { position: absolute; top: 12px; right: 12px; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(11, 10, 11, .78); border: 2px solid var(--red); font-weight: 800; font-size: 1.25rem; }
 .photo-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(255, 255, 255, .12); }
