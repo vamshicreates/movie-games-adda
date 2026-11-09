@@ -256,3 +256,24 @@ input[type="file"] { padding: 7px; }
   .card-bottom { align-items: start; flex-direction: column; gap: 0; }
   .media-fields, .edit-options { grid-template-columns: 1fr; }
 }
+
+/* Guess the Hero / Heroine: blurred photo, countdown, self-scored reveal */
+.clue-photo { position: relative; display: grid; place-items: center; overflow: hidden; background: #100b0f; border-radius: 10px; margin: 0; }
+.clue-photo img { display: block; width: 100%; max-height: 430px; object-fit: contain; filter: blur(20px) saturate(.9); transform: scale(1.08); transition: filter .6s ease, transform .6s ease; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.clue-photo.is-revealed img { filter: none; transform: none; }
+.photo-timer { position: absolute; top: 12px; right: 12px; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(11, 10, 11, .78); border: 2px solid var(--red); font-weight: 800; font-size: 1.25rem; }
+.photo-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(255, 255, 255, .12); }
+.photo-bar i { display: block; height: 100%; width: 100%; background: var(--red); transform-origin: left; animation: photo-count 5s linear forwards; }
+@keyframes photo-count { to { transform: scaleX(0); } }
+.clue-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 38px 16px 14px; text-align: center; font-size: 1.35rem; font-weight: 800; background: linear-gradient(transparent, rgba(11, 10, 11, .92)); }
+.clue-photo figcaption[hidden] { display: none; }
+.reveal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.reveal-actions[hidden] { display: none; }
+.reveal-actions .btn { min-height: 52px; justify-content: center; color: #fff; border: 0; font-weight: 800; }
+.guess-yes { background: #1f8f4e; }
+.guess-yes:hover { background: #26a95d; }
+.guess-no { background: #c9283a; }
+.guess-no:hover { background: #e03447; }
+.reveal-now { width: 100%; margin-top: 16px; justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .clue-photo img { transition: none; } .photo-bar i { animation-duration: 5s; } }
+@media (max-width: 560px) { .reveal-actions { grid-template-columns: 1fr; } .clue-photo img { max-height: 380px; } }

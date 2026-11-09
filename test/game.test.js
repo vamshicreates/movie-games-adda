@@ -51,7 +51,7 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
   const catalog = await player('/api/catalog');
   assert.deepEqual(catalog.industries, [{ id: 'tollywood', name: 'Tollywood' }]);
   assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['audio', 'emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot']);
-  assert(catalog.counts.every(count => count.live === 1));
+  assert(catalog.counts.every(count => count.live === (count.mode.startsWith('hero') ? 2 : 1)));
   const start = { industry: 'tollywood', mode: 'emoji' };
   let round = await player('/api/rounds', start, 201);
   const path = `/api/rounds/${round.id}`;

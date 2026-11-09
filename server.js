@@ -13,7 +13,7 @@ const imageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const audioTypes = new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']);
 const types = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.mp3': 'audio/mpeg',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg',
 };
 const maxUpload = 8 * 1024 * 1024;
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -177,7 +177,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
           need(asset && allowed.has(asset.type), 400, `${label} needs a valid ${clue} upload.`);
           fingerprint = upload[1];
         } else {
-          need(starter && /^\/media\/((frame|meme)-\d+\.webp|audio-\d+\.mp3)$/.test(media), 400, `${label} needs a valid upload.`);
+          need(starter && /^\/media\/((frame|meme)-\d+\.webp|(hero|heroine)-\d+\.jpg|audio-\d+\.mp3)$/.test(media), 400, `${label} needs a valid upload.`);
           fingerprint = hash(readFileSync(resolve(publicDir, '.' + media)));
         }
       } else {
@@ -206,7 +206,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
   }
   if (seed) transaction(() => {
     for (const set of starterSets()) {
-      const id = `starter-${set.mode}`;
+      const id = set.id ?? `starter-${set.mode}`;
       if (!query('SELECT id FROM sets WHERE id = ?', id)) insertSet(set, 'live', true, id);
     }
   });
@@ -253,12 +253,13 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
     if (position === 10) return {
       ...header, complete: true, score: answers.filter(answer => answer.correct).length,
       review: questions.map(({ options, correct }, i) => ({
-        answer: options[correct], picked: answers[i].guess ?? options[answers[i].picked], correct: answers[i].correct,
+        answer: options[correct], picked: answerFormat === 'reveal' ? 'Not recognised' : answers[i].guess ?? options[answers[i].picked], correct: answers[i].correct,
       })),
     };
     const { id: questionId, text, alt, media, options, correct } = questions[position];
     const question = { id: questionId, text, alt, media };
     if (answerFormat === 'multiple') question.options = options;
+    if (answerFormat === 'reveal') question.name = options[correct];
     const answer = answers[position];
     const feedback = answer ? { ...answer, correctAnswer: options[correct] } : null;
     if (feedback && answerFormat === 'multiple') feedback.correctIndex = correct;
@@ -270,9 +271,11 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
     const post = req.method === 'POST';
     if (get && path === '/api/catalog') return json(res, catalog(player(req, res)));
     if (post && path === '/api/rounds') {
-      const { industry, mode, answerFormat = 'multiple' } = await readJson(req);
+      let { industry, mode, answerFormat = 'multiple' } = await readJson(req);
       need(typeof industry === 'string' && typeof mode === 'string' && Object.hasOwn(modes, mode), 400, 'Choose an industry and game.');
       need(typeof answerFormat === 'string' && Object.hasOwn(answerFormats, answerFormat), 400, 'Choose an answer format.');
+      if (modes[mode].reveal) answerFormat = 'reveal';
+      need(answerFormat !== 'reveal' || modes[mode].reveal, 400, 'Choose an answer format.');
       const who = player(req, res);
       const id = transaction(() => {
         const current = query(`
@@ -313,7 +316,10 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
           if (!question || question.id !== questionId) return round;
           const answers = JSON.parse(round.answers);
           if (action === 'answer' && !answers[round.position]) {
-            if (round.answer_format === 'typed') {
+            if (round.answer_format === 'reveal') {
+              need(picked === 0 || picked === 1, 400, 'Choose Yes or No.');
+              answers.push({ picked, correct: picked === 0 });
+            } else if (round.answer_format === 'typed') {
               const guess = field(rawGuess, 120);
               need(/[\p{L}\p{N}]/u.test(guess), 400, 'Type your answer before submitting.');
               const accepted = [question.options[question.correct], ...question.aliases].map(normalizeGuess);

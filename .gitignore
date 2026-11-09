@@ -2,3 +2,8 @@
 .env
 .DS_Store
 .vercel
+/actors/
+/actresses/
+/heroes
+/heroines
+/.preview/

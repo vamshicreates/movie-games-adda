@@ -61,31 +61,52 @@ const emojis = [
   ['Pelli Choopulu', '💍 🚚 🍲'],
 ];
 
-const heroes = [
-  ['Chiranjeevi', 'The professor who fights corruption in Tagore and the Rayalaseema leader in Indra.', ['Megastar Chiranjeevi', 'చిరంజీవి']],
-  ['Balakrishna', 'The faction leader in Samarasimha Reddy and the Aghora in Akhanda.', ['Nandamuri Balakrishna', 'Balayya', 'NBK', 'బాలకృష్ణ']],
-  ['Pawan Kalyan', 'Siddhu in Kushi and the police officer in Gabbar Singh.', ['Power Star', 'PK', 'పవన్ కళ్యాణ్']],
-  ['Mahesh Babu', 'The hitman in Athadu and the undercover cop in Pokiri.', ['Superstar Mahesh', 'Mahesh', 'మహేష్ బాబు']],
-  ['Prabhas', 'The rebel in Chatrapathi and the bounty hunter Bhairava in Kalki 2898 AD.', ['Rebel Star', 'ప్రభాస్']],
-  ['Jr NTR', 'Komaram Bheem in RRR and Chari in Adhurs.', ['NTR', 'NTR Jr', 'Junior NTR', 'N. T. Rama Rao Jr', 'Tarak', 'జూనియర్ ఎన్టీఆర్']],
-  ['Allu Arjun', 'The cable operator in Vedam and the smuggler in Pushpa.', ['Bunny', 'Icon Star', 'అల్లు అర్జున్']],
-  ['Ram Charan', 'The warrior Kala Bhairava in Magadheera and the mechanic Chitti Babu in Rangasthalam.', ['Ram Charan Teja', 'Konidela Ram Charan', 'రామ్ చరణ్']],
-  ['Nani', 'The cricketer Arjun in Jersey and the coal thief Dharani in Dasara.', ['Natural Star Nani', 'నాని']],
-  ['Ravi Teja', 'The thrill seeker in Kick and the police officer Vikram Rathod in Vikramarkudu.', ['Mass Maharaja', 'రవితేజ']],
-];
-
-const heroines = [
-  ['Savitri', 'Sasirekha in Mayabazar and Parvati in Devadasu.', ['Mahanati Savitri', 'Savithri', 'సావిత్రి']],
-  ['Vijayashanti', 'The police officer Vyjayanthi in Karthavyam and the woman who takes on the local thugs in Pratighatana.', ['Vijayashanthi', 'Vijaya Shanti', 'విజయశాంతి']],
-  ['Soundarya', 'She played the female lead opposite Venkatesh in both Pavitra Bandham and Suryavamsam.', ['Saundarya', 'సౌందర్య']],
-  ['Anushka Shetty', 'The queen in Rudhramadevi and Devasena in the Baahubali films.', ['Anushka', 'Sweety Shetty', 'అనుష్క శెట్టి']],
-  ['Samantha Ruth Prabhu', 'Bindu in Eega and Rama Lakshmi in Rangasthalam.', ['Samantha', 'Samantha Akkineni', 'సమంత']],
-  ['Kajal Aggarwal', 'Mitravinda in Magadheera and Anjali in Arya 2.', ['Kajal', 'Kajal Agarwal', 'కాజల్ అగర్వాల్']],
-  ['Sai Pallavi', 'Bhanumathi in Fidaa and Mounica in Love Story.', ['సాయి పల్లవి']],
-  ['Keerthy Suresh', 'Savitri in Mahanati and Vennela in Dasara.', ['Keerthi Suresh', 'Keerthy', 'కీర్తి సురేష్']],
-  ['Rashmika Mandanna', 'Geetha in Geetha Govindam and Srivalli in Pushpa.', ['Rashmika', 'రష్మిక మందన్న']],
-  ['Mrunal Thakur', 'Sita in Sita Ramam and Yashna in Hi Nanna.', ['Mrunal', 'మృణాల్ ఠాకూర్']],
-];
+const photoNames = {
+  "hero": [
+    "Prabhas",
+    "Mahesh Babu",
+    "Allu Arjun",
+    "Ram Charan",
+    "N.T. Rama Rao Jr.",
+    "Pawan Kalyan",
+    "Nani",
+    "Nagarjuna Akkineni",
+    "Ravi Teja",
+    "Nandamuri Balakrishna",
+    "Rana Daggubati",
+    "Vijay Deverakonda",
+    "Naga Chaitanya Akkineni",
+    "Varun Tej",
+    "Sai Dharam Tej",
+    "Nithiin",
+    "Sharwanand",
+    "Adivi Sesh",
+    "Nikhil Siddharth",
+    "Sundeep Kishan"
+  ],
+  "heroine": [
+    "Samantha Ruth Prabhu",
+    "Anushka Shetty",
+    "Kajal Aggarwal",
+    "Keerthy Suresh",
+    "Rashmika Mandanna",
+    "Pooja Hegde",
+    "Tamannaah Bhatia",
+    "Sai Pallavi",
+    "Trisha Krishnan",
+    "Nayanthara",
+    "Kiara Advani",
+    "Sreeleela",
+    "Raashi Khanna",
+    "Rakul Preet Singh",
+    "Nithya Menen",
+    "Mehreen Pirzada",
+    "Anupama Parameswaran",
+    "Mrunal Thakur",
+    "Nabha Natesh",
+    "Shriya Saran"
+  ]
+};
 
 const plots = [
   ['Eega', 'One man spends a fortune on security and still can’t keep a fly out of his house.'],
@@ -139,14 +160,33 @@ export function starterAliases(answer) {
   return Object.hasOwn(movieAliases, answer) ? movieAliases[answer] : [];
 }
 
+function photoSets() {
+  const titles = { hero: 'Tollywood Leading Men', heroine: 'Tollywood Leading Women' };
+  return Object.entries(photoNames).flatMap(([mode, all]) => [0, 1].map(part => {
+    const names = all.slice(part * 10, part * 10 + 10);
+    return {
+      id: `starter-${mode}-${part + 1}`, industry: 'tollywood', mode, title: `${titles[mode]} ${part + 1}`, starter: true,
+      questions: names.map((answer, i) => {
+        const options = shuffle([answer, ...shuffle(names.filter(name => name !== answer)).slice(0, 3)]);
+        return {
+          media: `/media/${mode}-${part * 10 + i + 1}.jpg`, alt: 'Portrait photo. The name is revealed after the countdown.',
+          aliases: [], options, correct: options.indexOf(answer),
+        };
+      }),
+    };
+  }));
+}
+
 export function starterSets() {
+  return [...photoSets(), ...regularSets()];
+}
+
+function regularSets() {
   return [
     ['frame', 'Scenes of Tollywood', frames, (_, i) => ({ media: `/media/frame-${i + 1}.webp` })],
     ['audio', 'Tollywood by Ear', spoken, (_, i) => ({ media: `/media/audio-${i + 1}.mp3` })],
     ['lyric', 'Tollywood Hooks', lyrics, text => ({ text })],
     ['emoji', 'Tollywood in Emojis', emojis, text => ({ text })],
-    ['hero', 'Tollywood Leading Men', heroes, text => ({ text })],
-    ['heroine', 'Tollywood Leading Women', heroines, text => ({ text })],
     ['plot', 'Plot Summaries Gone Wrong', plots, text => ({ text })],
     ['meme', 'Tollywood Meme Classics', memes, (alt, i, text) => ({ media: `/media/meme-${i + 1}.webp`, alt, text })],
   ].map(([mode, title, entries, clue]) => ({

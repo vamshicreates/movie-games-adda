@@ -86,13 +86,19 @@ async function startRound(industry, mode, trigger, answerFormat) {
   }
 }
 
+function beginRound(industry, mode, trigger) {
+  if (modes[mode].reveal) return startRound(industry, mode, trigger, 'reveal');
+  chooseFormat(industry, mode);
+}
+
+let revealTimer;
 function chooseFormat(industry, mode) {
   const dialog = document.createElement('dialog');
   dialog.className = 'format-picker';
   dialog.setAttribute('aria-labelledby', 'format-title');
   dialog.innerHTML = `<div class="dialog-top"><div><p class="subtle">${esc(modes[mode].name)}</p><h2 id="format-title">How do you want to answer?</h2></div>
     <button class="icon-button" type="button" aria-label="Close">${icon('close')}</button></div>
-    <div class="format-choices">${Object.entries(answerFormats).map(([id, format]) => `
+    <div class="format-choices">${Object.entries(answerFormats).filter(([id]) => id !== 'reveal').map(([id, format]) => `
       <button class="format-choice" type="button" data-format="${id}">
         <span class="format-icon">${icon(id === 'typed' ? 'keyboard' : 'choices', 22)}</span>
         <span><strong class="format-label">${esc(format.label)}</strong><small>${esc(format.description)}</small></span>
@@ -168,7 +174,7 @@ function home(data) {
     const mode = el.dataset.mode;
     const active = activeRound(mode);
     if (active) return startRound(industry.id, mode, el, active.answerFormat);
-    chooseFormat(industry.id, mode);
+    return beginRound(industry.id, mode, el);
   })));
   main.querySelector('#industry')?.addEventListener('change', event => {
     selectedIndustry = event.target.value;
@@ -182,20 +188,22 @@ function home(data) {
 function showRound(round) {
   const mode = modes[round.mode];
   const typed = round.answerFormat === 'typed';
+  const reveal = round.answerFormat === 'reveal';
+  clearInterval(revealTimer);
   const back = lobbyURL(round.industry);
   document.title = `${mode.name} | Movie Games Adda`;
   if (round.complete) {
     main.innerHTML = `<div class="shell play-shell"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>
       <section class="results panel">
-        <div class="trophy">${icon('trophy', 32)}</div><p class="subtle">${esc(mode.name)} · ${esc(round.industryName)} · ${typed ? 'Typed answers' : 'Multiple choice'}</p>
+        <div class="trophy">${icon('trophy', 32)}</div><p class="subtle">${esc(mode.name)} · ${esc(round.industryName)} · ${reveal ? 'Guess & reveal' : typed ? 'Typed answers' : 'Multiple choice'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
         <div class="score">${round.score}<span> / 10</span></div>
-        <p>You got ${round.score} of 10 correct.</p>
+        <p>${reveal ? `You recognised ${round.score} of 10.` : `You got ${round.score} of 10 correct.`}</p>
         <div class="result-actions"><button type="button" class="btn primary" id="replay">${icon('repeat', 19)} Play again</button><a class="btn secondary" href="${back}">Choose a game</a></div>
         <p class="status" role="status"></p>
         <details class="review"><summary>Review your answers</summary><ol>${round.review.map(item => `<li><span class="${item.correct ? 'correct-text' : 'incorrect-text'}">${icon(item.correct ? 'check' : 'close', 18)}</span><div>${esc(item.answer)}${item.correct ? '' : `<small>Your answer: ${esc(item.picked)}</small>`}</div></li>`).join('')}</ol></details>
       </section></div>`;
-    button('#replay', () => chooseFormat(round.industry, round.mode));
+    main.querySelector('#replay').addEventListener('click', action(main.querySelector('#replay'), () => beginRound(round.industry, round.mode, main.querySelector('#replay'))));
     main.querySelector('#question-title').focus({ preventScroll: true });
     return;
   }
@@ -208,13 +216,22 @@ function showRound(round) {
     emoji: () => `<div class="clue clue-emoji">${esc(question.text)}</div>`,
     text: () => `<div class="clue clue-text">${esc(question.text)}</div>`,
   };
-  const clue = (clueRenderers[mode.clue ?? round.mode] ?? clueRenderers.text)();
+  const revealed = Boolean(feedback);
+  const clue = reveal
+    ? `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Blurred photo'}" draggable="false">
+        ${revealed ? '' : '<div class="photo-timer" aria-live="off"><span id="count">5</span></div><div class="photo-bar" aria-hidden="true"><i></i></div>'}
+        <figcaption id="reveal-name" ${revealed ? '' : 'hidden'}>${esc(question.name)}</figcaption></figure>`
+    : (clueRenderers[mode.clue ?? round.mode] ?? clueRenderers.text)();
   const options = question.options?.map((option, index) => {
     const correct = feedback && index === feedback.correctIndex;
     const wrong = feedback && index === feedback.picked && !feedback.correct;
     return `<button type="button" class="option ${correct ? 'option-correct' : ''} ${wrong ? 'option-wrong' : ''}" data-pick="${index}" ${feedback ? 'disabled' : ''}><span class="option-letter">${letters[index]}</span><span>${esc(option)}</span>${correct || wrong ? icon(correct ? 'check' : 'close', 19) : ''}</button>`;
   }).join('');
-  const answerControl = typed ? (feedback
+  const revealControl = feedback
+    ? `<p class="submitted-guess"><strong>You said</strong> ${feedback.correct ? 'I guessed it' : 'I didn’t'}</p>`
+    : `<div class="reveal-actions" id="reveal-actions" hidden><button type="button" class="btn guess-yes" data-self="0">${icon('check', 20)} Yes, I guessed</button><button type="button" class="btn guess-no" data-self="1">${icon('close', 20)} No, I didn’t</button></div>
+       <button type="button" class="btn secondary reveal-now" id="reveal-now">Reveal now</button>`;
+  const answerControl = reveal ? revealControl : typed ? (feedback
     ? `<p class="submitted-guess"><strong>Your answer</strong> ${esc(feedback.guess)}</p>`
     : `<form class="typed-answer"><label>Your answer<input name="guess" type="text" required maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Type your guess"></label><button class="btn primary" type="submit">Submit answer</button></form>`)
     : `<div class="options">${options}</div>`;
@@ -225,11 +242,11 @@ function showRound(round) {
       <div class="progress" aria-hidden="true">${Array.from({ length: 10 }, (_, i) => `<i class="${i <= position ? 'filled' : ''}"></i>`).join('')}</div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
       ${clue}
-      ${round.starter && mode.clue === 'image' ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
+      ${round.starter && mode.clue === 'image' && !reveal ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
       ${round.starter && round.mode === 'audio' ? '<p class="clue-credit">Original narrated clue</p>' : ''}
       ${answerControl}
       <p class="status" role="status"></p>
-      ${feedback ? `<div class="answer-footer"><p class="${feedback.correct ? 'correct-text' : 'incorrect-text'}" role="status">${feedback.correct ? 'Correct! +1 point' : `Correct answer: ${esc(feedback.correctAnswer)}`}</p><button type="button" id="next" class="btn primary">${position === 9 ? 'See score' : 'Next question'} ${icon('arrow', 18)}</button></div>` : ''}
+      ${feedback ? `<div class="answer-footer"><p class="${feedback.correct ? 'correct-text' : 'incorrect-text'}" role="status">${reveal ? (feedback.correct ? 'Nice! +1 point' : `It was ${esc(feedback.correctAnswer)}`) : feedback.correct ? 'Correct! +1 point' : `Correct answer: ${esc(feedback.correctAnswer)}`}</p><button type="button" id="next" class="btn primary">${position === 9 ? 'See score' : 'Next question'} ${icon('arrow', 18)}</button></div>` : ''}
     </section>
   </div>`;
   let pending = false;
@@ -242,6 +259,39 @@ function showRound(round) {
   main.querySelectorAll('[data-pick]').forEach(el => {
     el.addEventListener('click', action(el, () => submitAnswer({ picked: Number(el.dataset.pick) })));
   });
+  main.querySelectorAll('[data-self]').forEach(el => {
+    el.addEventListener('click', action(el, async () => {
+      if (pending) return;
+      pending = true;
+      try {
+        await post(`/rounds/${round.id}/answer`, { questionId: question.id, picked: Number(el.dataset.self) });
+        showRound(await post(`/rounds/${round.id}/next`, { questionId: question.id }));
+        window.scrollTo(0, 0);
+      } finally { pending = false; }
+    }));
+  });
+  if (reveal && !feedback) {
+    clearInterval(revealTimer);
+    const photo = main.querySelector('#photo');
+    const count = main.querySelector('#count');
+    let left = 5;
+    const showName = () => {
+      clearInterval(revealTimer);
+      main.querySelector('.clue-photo').classList.add('is-revealed');
+      main.querySelector('.photo-timer')?.remove();
+      main.querySelector('.photo-bar')?.remove();
+      main.querySelector('#reveal-name').hidden = false;
+      main.querySelector('#reveal-now')?.remove();
+      main.querySelector('#reveal-actions').hidden = false;
+      photo.alt = question.name;
+    };
+    revealTimer = setInterval(() => {
+      left -= 1;
+      if (count) count.textContent = String(left);
+      if (left <= 0) showName();
+    }, 1000);
+    main.querySelector('#reveal-now').addEventListener('click', showName);
+  }
   const typedForm = main.querySelector('.typed-answer');
   if (typedForm) {
     typedForm.addEventListener('submit', action(typedForm.querySelector('button'), () => {
