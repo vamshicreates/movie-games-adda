@@ -15,7 +15,7 @@ function set(number, industry = 'tollywood') {
 }
 
 async function fixture(t) {
-  const server = buildServer({ adminPassword: password });
+  const server = buildServer({ adminPassword: password, enforceSoon: false });
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => new Promise(resolve => server.close(resolve)));
@@ -50,7 +50,7 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
   const player = client();
   const catalog = await player('/api/catalog');
   assert.deepEqual(catalog.industries, [{ id: 'tollywood', name: 'Tollywood' }]);
-  assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['audio', 'emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot', 'song']);
+  assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot', 'song']);
   assert(catalog.counts.every(count => count.live === ({ hero: 2, heroine: 2, song: 9 }[count.mode] ?? 1)));
   const start = { industry: 'tollywood', mode: 'emoji' };
   let round = await player('/api/rounds', start, 201);
@@ -195,4 +195,39 @@ test('song levels unlock in order and reveal the song details after each self-sc
   await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 1 }, 409);
   const next = await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 2 }, 201);
   assert.equal(next.level, 2);
+});
+
+test('games marked coming soon cannot be started and the audio game is gone', async t => {
+  const server = buildServer({ adminPassword: password });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const post = (mode) => fetch(`http://127.0.0.1:${server.address().port}/api/rounds`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ industry: 'tollywood', mode }),
+  });
+  for (const mode of ['frame', 'lyric', 'emoji', 'plot', 'meme']) assert.equal((await post(mode)).status, 409, mode);
+  assert.equal((await post('audio')).status, 400);
+  assert.equal((await post('hero')).status, 201);
+});
+
+test('hero and heroine rounds are levels too, unlocking in order', async t => {
+  const { client } = await fixture(t);
+  const player = client();
+  for (const mode of ['hero', 'heroine']) {
+    const levels = () => player('/api/catalog').then(c => c.levels.filter(l => l.mode === mode));
+    assert.deepEqual((await levels()).map(l => l.state), ['open', 'locked']);
+    await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 409);
+    let round = await player('/api/rounds', { industry: 'tollywood', mode }, 201);
+    assert.equal(round.level, 1);
+    assert.equal(round.nextLevel, 2);
+    for (let i = 0; i < 10; i++) {
+      round = await player(`/api/rounds/${round.id}/answer`, { questionId: round.question.id, picked: 0 });
+      round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
+    }
+    assert.equal(round.score, 10);
+    assert.deepEqual((await levels()).map(l => l.state), ['done', 'open']);
+    round = await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 201);
+    assert.equal(round.level, 2);
+    assert.equal(round.nextLevel, null);
+  }
 });

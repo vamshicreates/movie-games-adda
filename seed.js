@@ -166,7 +166,7 @@ function photoSets() {
   return Object.entries(photoNames).flatMap(([mode, all]) => [0, 1].map(part => {
     const names = all.slice(part * 10, part * 10 + 10);
     return {
-      id: `starter-${mode}-${part + 1}`, industry: 'tollywood', mode, title: `${titles[mode]} ${part + 1}`, starter: true,
+      id: `starter-${mode}-${part + 1}`, industry: 'tollywood', mode, title: `Level ${part + 1}`, starter: true,
       questions: names.map((answer, i) => {
         const options = shuffle([answer, ...shuffle(names.filter(name => name !== answer)).slice(0, 3)]);
         return {
@@ -200,7 +200,6 @@ function songSets() {
 function regularSets() {
   return [
     ['frame', 'Scenes of Tollywood', frames, (_, i) => ({ media: `/media/frame-${i + 1}.webp` })],
-    ['audio', 'Tollywood by Ear', spoken, (_, i) => ({ media: `/media/audio-${i + 1}.mp3` })],
     ['lyric', 'Tollywood Hooks', lyrics, text => ({ text })],
     ['emoji', 'Tollywood in Emojis', emojis, text => ({ text })],
     ['plot', 'Plot Summaries Gone Wrong', plots, text => ({ text })],

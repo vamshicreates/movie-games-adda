@@ -97,7 +97,7 @@ function bytesResponse(req, res, { type, length, stream, cache }) {
   stream(start, end);
 }
 
-export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } = {}) {
+export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, enforceSoon = true } = {}) {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec(`
@@ -299,6 +299,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
       let { industry, mode, answerFormat = 'multiple', level } = await readJson(req);
       need(typeof industry === 'string' && typeof mode === 'string' && Object.hasOwn(modes, mode), 400, 'Choose an industry and game.');
       need(typeof answerFormat === 'string' && Object.hasOwn(answerFormats, answerFormat), 400, 'Choose an answer format.');
+      need(!(enforceSoon && modes[mode].soon), 409, 'This game is coming soon.');
       need(level === undefined || Number.isInteger(level), 400, 'Choose a level.');
       if (modes[mode].reveal) answerFormat = 'reveal';
       need(answerFormat !== 'reveal' || modes[mode].reveal, 400, 'Choose an answer format.');

@@ -320,3 +320,8 @@ input[type="file"] { padding: 7px; }
 .song-note { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #4c303c; color: var(--muted); font-size: .92rem; line-height: 1.5; }
 @media (prefers-reduced-motion: reduce) { .song-stage.playing .eq i { animation: none; height: 40px; } }
 .levels { padding: clamp(18px, 4vw, 30px); }
+
+/* Coming-soon games */
+.game-soon .card-visual { filter: grayscale(.7); opacity: .55; }
+.game-soon h3, .game-soon p { opacity: .75; }
+.soon-pill { display: inline-flex; align-items: center; min-height: 36px; padding: 5px 14px; border-radius: 999px; border: 1px dashed #7a2a3a; color: var(--red-light); font-weight: 800; font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; }

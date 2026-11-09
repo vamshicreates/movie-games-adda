@@ -100,7 +100,7 @@ function showLevels(data, industryId, modeId) {
     <section class="panel levels">
       <p class="subtle">${esc(mode.name)}</p>
       <h1 id="question-title" tabindex="-1">Choose a level</h1>
-      <p>Each level has ten songs. Finish a level to unlock the next one. ${done} of ${levels.length} complete.</p>
+      <p>Each level has ten ${mode.unit ?? 'questions'}. Finish a level to unlock the next one. ${done} of ${levels.length} complete.</p>
       <div class="level-grid">${levels.map(item => {
         const locked = item.state === 'locked';
         const label = { done: `${item.score} / 10`, playing: 'Resume', open: 'Start', locked: 'Locked' }[item.state];
@@ -151,6 +151,7 @@ function home(data) {
   const statsText = id => {
     const { live, played } = stats(id);
     const active = activeRound(id);
+    if (modes[id].soon) return 'In the works';
     if (modes[id].levels) {
       const list = data.levels.filter(item => item.industry === industry.id && item.mode === id);
       const finished = list.filter(item => item.state === 'done').length;
@@ -165,12 +166,12 @@ function home(data) {
   const games = Object.entries(modes).map(([id, mode]) => {
     const active = activeRound(id);
     const ready = stats(id).live > stats(id).played || active || (modes[id].levels && stats(id).live > 0);
-    return `<article class="game-card game-${id}">
+    return `<article class="game-card game-${id} ${mode.soon ? 'game-soon' : ''}">
       <div class="card-visual">${cardArt(id)}<span class="card-chip">${icon(id, 14)}${esc(mode.label)}</span></div>
       <div class="card-body">
         <h3>${esc(mode.name)}</h3><p>${esc(mode.desc)}</p>
         <div class="card-bottom"><span>${esc(statsText(id))}</span>
-        <button type="button" class="round-link" data-mode="${id}" ${ready ? '' : 'disabled'} aria-label="${active ? 'Resume' : 'Play'} ${esc(mode.name)}">${active ? 'Resume' : 'Play'} ${icon('arrow', 16)}</button></div>
+        ${mode.soon ? '<span class="soon-pill">Coming soon</span>' : `<button type="button" class="round-link" data-mode="${id}" ${ready ? '' : 'disabled'} aria-label="${active ? 'Resume' : 'Play'} ${esc(mode.name)}">${active ? 'Resume' : 'Play'} ${icon('arrow', 16)}</button>`}</div>
       </div>
     </article>`;
   }).join('');
@@ -180,14 +181,14 @@ function home(data) {
       <div class="hero-copy">
         <div class="hero-label"><span></span>${esc(industry.name)} Edition</div>
         <h1 id="hero-title">The ${esc(industry.name)}<br>movie quiz.</h1>
-        <p>Recognize a frame, catch a song, or crack an emoji clue. How well do you know your movies?</p>
+        <p>Spot a star, catch a song, and unlock new levels. How well do you know your movies?</p>
         <a class="btn primary" href="#games">${icon('play', 20)} Explore games</a>
       </div>
       <div class="hero-stamp" aria-hidden="true">${icon('film', 16)} <span>THE MOVIE QUIZ CLUB</span></div>
     </section>
     <section id="games" class="games-section" aria-labelledby="games-title">
       <div class="section-top">
-        <div><h2 id="games-title">Choose a game</h2><p>Eight ways to test your movie memory.</p></div>
+        <div><h2 id="games-title">Choose a game</h2><p>${Object.values(modes).filter(item => !item.soon).length} games to play now, ${Object.values(modes).filter(item => item.soon).length} more coming soon.</p></div>
         ${data.industries.length > 1 ? `<label class="industry-pill">${icon('film', 17)}<span class="sr-only">Film industry</span><select id="industry">${industryOptions(data.industries, industry.id)}</select></label>` : `<div class="industry-pill">${icon('film', 17)} ${esc(industry.name)}</div>`}
       </div>
       <p class="status" role="status"></p>
