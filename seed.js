@@ -192,7 +192,7 @@ export function starterAliases(answer) {
 }
 
 function photoSets() {
-  const titles = { hero: 'Tollywood Leading Men', heroine: 'Tollywood Leading Women' };
+  const titles = { hero: 'Guess the Actor', heroine: 'Guess the Actress' };
   return Object.entries(photoNames).flatMap(([mode, all]) => Array.from({ length: Math.ceil(all.length / 10) }, (_, part) => {
     const names = all.slice(part * 10, part * 10 + 10);
     return {
