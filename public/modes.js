@@ -1,6 +1,7 @@
 export const modes = {
   hero: { name: 'Guess the Hero', desc: 'A blurred photo, five seconds. Do you know him?', label: 'Hero', prompt: 'Do you know this actor?', clue: 'image', reveal: true },
   heroine: { name: 'Guess the Heroine', desc: 'A blurred photo, five seconds. Do you know her?', label: 'Heroine', prompt: 'Do you know this actress?', clue: 'image', reveal: true },
+  song: { name: 'Guess the Song', desc: 'Five seconds of vocals. Do you know the song?', label: 'Song', prompt: 'Do you know this song?', clue: 'audio', reveal: true, levels: true },
   frame: { name: 'Guess by Frame', desc: 'Name the movie from a single scene.', label: 'Frame', prompt: 'Which movie is this scene from?', clue: 'image' },
   audio: { name: 'Guess by Audio', desc: 'Listen closely and name the movie.', label: 'Audio', prompt: 'Which movie does this audio clue describe?', clue: 'audio' },
   lyric: { name: 'Guess by Lyrics', desc: 'Read the lyric and match it to the film.', label: 'Lyrics', prompt: 'Which movie features this song?' },

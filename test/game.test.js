@@ -50,8 +50,8 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
   const player = client();
   const catalog = await player('/api/catalog');
   assert.deepEqual(catalog.industries, [{ id: 'tollywood', name: 'Tollywood' }]);
-  assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['audio', 'emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot']);
-  assert(catalog.counts.every(count => count.live === (count.mode.startsWith('hero') ? 2 : 1)));
+  assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['audio', 'emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot', 'song']);
+  assert(catalog.counts.every(count => count.live === ({ hero: 2, heroine: 2, song: 9 }[count.mode] ?? 1)));
   const start = { industry: 'tollywood', mode: 'emoji' };
   let round = await player('/api/rounds', start, 201);
   const path = `/api/rounds/${round.id}`;
@@ -165,4 +165,34 @@ test('publishes fresh sets without duplicate clues, supports 20 sets, and isolat
   await admin('/api/admin/industries', { name: 'Kollywood' }, 201);
   await admin('/api/admin/sets', { sets: [set(1, 'kollywood')], status: 'live' }, 201);
   assert.equal((await player('/api/rounds', { ...start, industry: 'kollywood' }, 201)).industryName, 'Kollywood');
+});
+
+test('song levels unlock in order and reveal the song details after each self-scored answer', async t => {
+  const { client } = await fixture(t);
+  const player = client();
+  const state = async () => (await player('/api/catalog')).levels.filter(level => level.mode === 'song');
+  let levels = await state();
+  assert.equal(levels.length, 9);
+  assert.deepEqual(levels.map(level => level.state), ['open', ...Array(8).fill('locked')]);
+  await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 2 }, 409);
+  let round = await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 1 }, 201);
+  assert.equal(round.level, 1);
+  assert.equal(round.answerFormat, 'reveal');
+  assert.equal(round.nextLevel, 2);
+  assert(round.question.name && round.question.details.composer !== undefined && round.question.media.startsWith('/media/song-'));
+  assert.equal((await state())[0].state, 'playing');
+  await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 2 }, 409);
+  for (let i = 0; i < 10; i++) {
+    round = await player(`/api/rounds/${round.id}/answer`, { questionId: round.question.id, picked: i < 7 ? 0 : 1 });
+    round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
+  }
+  assert.equal(round.complete, true);
+  assert.equal(round.score, 7);
+  assert.equal(round.nextLevel, 2);
+  levels = await state();
+  assert.deepEqual(levels.slice(0, 3).map(level => level.state), ['done', 'open', 'locked']);
+  assert.equal(levels[0].score, 7);
+  await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 1 }, 409);
+  const next = await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 2 }, 201);
+  assert.equal(next.level, 2);
 });

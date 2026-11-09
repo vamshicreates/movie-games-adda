@@ -166,6 +166,9 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
       const text = field(question.text, 350);
       const alt = field(question.alt, 350);
       const media = field(question.media, 2000);
+      const rawDetails = question.details && typeof question.details === 'object' ? question.details : null;
+      const details = rawDetails ? Object.fromEntries(['movie', 'year', 'composer', 'singers', 'lyricist', 'note']
+        .map(key => [key, field(rawDetails[key], 350)]).filter(([, value]) => value)) : undefined;
       let fingerprint;
       const clue = modes[mode].clue;
       if (clue) {
@@ -177,7 +180,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
           need(asset && allowed.has(asset.type), 400, `${label} needs a valid ${clue} upload.`);
           fingerprint = upload[1];
         } else {
-          need(starter && /^\/media\/((frame|meme)-\d+\.webp|(hero|heroine)-\d+\.jpg|audio-\d+\.mp3)$/.test(media), 400, `${label} needs a valid upload.`);
+          need(starter && /^\/media\/((frame|meme)-\d+\.webp|(hero|heroine)-\d+\.jpg|song-\d+\.mp3|audio-\d+\.mp3)$/.test(media), 400, `${label} needs a valid upload.`);
           fingerprint = hash(readFileSync(resolve(publicDir, '.' + media)));
         }
       } else {
@@ -186,7 +189,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
       }
       need(!fingerprints.has(fingerprint), 400, `${label} repeats a clue in this set.`);
       fingerprints.add(fingerprint);
-      return { id: randomUUID(), text, alt, media, options, correct, aliases: aliases.map(alias => alias.trim()), fingerprint };
+      return { id: randomUUID(), text, alt, media, details, options, correct, aliases: aliases.map(alias => alias.trim()), fingerprint };
     });
     return { industry, mode, title, questions };
   }
@@ -223,6 +226,20 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
     need(value && query('SELECT 1 FROM admins WHERE id = ? AND expires > ?', hash(value), Date.now()), 401, 'Sign in to continue.');
   }
   const attempts = new Map();
+  function levelList(industry, mode, who) {
+    const list = rows(`
+      SELECT s.id, r.id AS round, r.position, r.answers FROM sets s
+      LEFT JOIN rounds r ON r.set_id = s.id AND r.player = ?
+      WHERE s.status = 'live' AND s.industry = ? AND s.mode = ? ORDER BY s.created, s.id
+    `, who, industry, mode);
+    let unlocked = true;
+    return list.map((row, index) => {
+      const done = row.round && row.position === 10;
+      const state = done ? 'done' : row.round ? 'playing' : unlocked ? 'open' : 'locked';
+      if (!done) unlocked = false;
+      return { level: index + 1, id: row.id, round: row.round, state, score: done ? JSON.parse(row.answers).filter(answer => answer.correct).length : null };
+    });
+  }
   function catalog(who) {
     const industries = rows('SELECT id, name FROM industries ORDER BY name');
     const counts = rows(`
@@ -234,7 +251,9 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
       SELECT r.id, r.answer_format AS answerFormat, s.industry, s.mode FROM rounds r JOIN sets s ON s.id = r.set_id
       WHERE r.player = ? AND r.position < 10 ORDER BY r.created DESC
     `, who);
-    return { industries, counts, active };
+    const levels = industries.flatMap(({ id: industry }) => Object.entries(modes).filter(([, mode]) => mode.levels)
+      .flatMap(([mode]) => levelList(industry, mode, who).map(({ level, state, score }) => ({ industry, mode, level, state, score }))));
+    return { industries, counts, active, levels };
   }
   function fetchRound(id, who) {
     const round = query(`
@@ -250,16 +269,22 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
     const answers = JSON.parse(round.answers);
     const { id, title, industry, industryName, mode, starter, position, answer_format: answerFormat } = round;
     const header = { id, title, industry, industryName, mode, starter: !!starter, position, answerFormat, total: 10 };
+    if (modes[mode].levels) {
+      const live = rows("SELECT id FROM sets WHERE status = 'live' AND industry = ? AND mode = ? ORDER BY created, id", industry, mode);
+      header.level = live.findIndex(set => set.id === round.set_id) + 1;
+      header.levelTotal = live.length;
+      header.nextLevel = header.level < live.length ? header.level + 1 : null;
+    }
     if (position === 10) return {
       ...header, complete: true, score: answers.filter(answer => answer.correct).length,
       review: questions.map(({ options, correct }, i) => ({
         answer: options[correct], picked: answerFormat === 'reveal' ? 'Not recognised' : answers[i].guess ?? options[answers[i].picked], correct: answers[i].correct,
       })),
     };
-    const { id: questionId, text, alt, media, options, correct } = questions[position];
+    const { id: questionId, text, alt, media, details, options, correct } = questions[position];
     const question = { id: questionId, text, alt, media };
     if (answerFormat === 'multiple') question.options = options;
-    if (answerFormat === 'reveal') question.name = options[correct];
+    if (answerFormat === 'reveal') { question.name = options[correct]; if (details) question.details = details; }
     const answer = answers[position];
     const feedback = answer ? { ...answer, correctAnswer: options[correct] } : null;
     if (feedback && answerFormat === 'multiple') feedback.correctIndex = correct;
@@ -271,13 +296,31 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true } 
     const post = req.method === 'POST';
     if (get && path === '/api/catalog') return json(res, catalog(player(req, res)));
     if (post && path === '/api/rounds') {
-      let { industry, mode, answerFormat = 'multiple' } = await readJson(req);
+      let { industry, mode, answerFormat = 'multiple', level } = await readJson(req);
       need(typeof industry === 'string' && typeof mode === 'string' && Object.hasOwn(modes, mode), 400, 'Choose an industry and game.');
       need(typeof answerFormat === 'string' && Object.hasOwn(answerFormats, answerFormat), 400, 'Choose an answer format.');
+      need(level === undefined || Number.isInteger(level), 400, 'Choose a level.');
       if (modes[mode].reveal) answerFormat = 'reveal';
       need(answerFormat !== 'reveal' || modes[mode].reveal, 400, 'Choose an answer format.');
       const who = player(req, res);
       const id = transaction(() => {
+        if (modes[mode].levels) {
+          const list = levelList(industry, mode, who);
+          const wanted = level === undefined ? list.find(item => item.state === 'playing' || item.state === 'open') : list[level - 1];
+          need(wanted, 409, 'You’ve finished every level. New levels will appear when more songs are published.');
+          need(wanted.state !== 'locked', 409, 'Finish the earlier levels to unlock this one.');
+          need(wanted.state !== 'done', 409, 'You’ve already finished this level.');
+          if (wanted.round) return wanted.round;
+          const set = query('SELECT id, questions, starter FROM sets WHERE id = ?', wanted.id);
+          const id = randomUUID();
+          const questions = shuffle(JSON.parse(set.questions)).map(question => {
+            const options = shuffle(question.options);
+            return { ...question, options, aliases: question.aliases ?? [], correct: options.indexOf(question.options[question.correct]) };
+          });
+          run('INSERT INTO rounds (id, player, set_id, questions, created, answer_format) VALUES (?, ?, ?, ?, ?, ?)',
+            id, who, set.id, JSON.stringify(questions), Date.now(), answerFormat);
+          return id;
+        }
         const current = query(`
           SELECT r.id FROM rounds r JOIN sets s ON s.id = r.set_id
           WHERE r.player = ? AND s.industry = ? AND s.mode = ? AND r.position < 10 ORDER BY r.created DESC LIMIT 1

@@ -4,6 +4,7 @@ export const icon = (name, size = 20) => {
     back: '<path d="M20 12H5m6 6-6-6 6-6"/>',
     play: '<path fill="currentColor" stroke="none" d="M8 4.5v15l12-7.5z"/>',
     frame: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="16.5" cy="8.5" r="1"/>',
+    song: '<path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
     audio: '<path d="M3 10v4m4-8v12m5-15v18m5-15v12m4-8v4"/>',
     lyric: '<path d="M11 6H7a3 3 0 0 0-3 3v7h6v-5H6m14-5h-4a3 3 0 0 0-3 3v7h6v-5h-4"/>',
     emoji: '<circle cx="12" cy="12" r="9"/><path d="M8 14s1.4 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
@@ -28,6 +29,8 @@ export const icon = (name, size = 20) => {
 const large = {
   frame: '<g transform="rotate(-13 127 75)"><rect x="55" y="26" width="144" height="99" rx="7"/><path d="M55 46h144m-144 60h144M70 26v20m28-20v20m29-20v20m29-20v20m28-20v20M70 106v19m28-19v19m29-19v19m29-19v19m28-19v19"/><path d="m66 99 39-35 28 28 20-18 33 25"/><circle cx="163" cy="62" r="8"/></g>',
   audio: '<g stroke-linecap="round"><path d="M41 75v8m13-16v24m13-35v46m13-37v28m13-50v72m13-54v36m13-72v108m13-94v80m13-65v50m13-58v66m13-41v16m13-29v42m13-33v24m13-16v8"/><path opacity=".3" d="M33 79h187"/></g>',
+
+  song: '<g stroke-linecap="round"><path d="M41 75v8m13-16v24m13-35v46m13-37v28m13-50v72m13-54v36m13-72v108m13-94v80m13-65v50m13-58v66m13-41v16m13-29v42m13-33v24m13-16v8"/><path opacity=".3" d="M33 79h187"/></g>',
   lyric: '<g transform="rotate(-10 127 72)"><path d="M118 39c-22 3-35 17-35 38v17h36V63H99c4-10 10-15 20-18zm52 0c-22 3-35 17-35 38v17h36V63h-20c4-10 10-15 20-18z" fill="currentColor" fill-opacity=".17"/><path opacity=".4" d="M64 111h120M87 124h74"/></g>',
   emoji: '<g transform="rotate(12 127 75)"><circle cx="123" cy="75" r="48"/><path d="M98 82c9 19 40 19 50 0M109 61h.1m28 0h.1" stroke-linecap="round"/><path d="m185 23 5 11 11 4-11 5-5 11-4-11-11-5 11-4zm-121 68 4 10 9 4-9 4-4 9-4-9-9-4 9-4z" stroke-width="2"/></g>',
   hero: '<g transform="rotate(-9 128 75)"><path d="m66 96 9-58 34 26 19-42 19 42 34-26 9 58z" fill="currentColor" fill-opacity=".12"/><path d="M72 110h112M89 96v14m77-14v14"/><circle cx="128" cy="79" r="7"/><path d="M52 58h-11m173 0h-11" opacity=".45"/></g>',

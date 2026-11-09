@@ -277,3 +277,46 @@ input[type="file"] { padding: 7px; }
 .reveal-now { width: 100%; margin-top: 16px; justify-content: center; }
 @media (prefers-reduced-motion: reduce) { .clue-photo img { transition: none; } .photo-bar i { animation-duration: 5s; } }
 @media (max-width: 560px) { .reveal-actions { grid-template-columns: 1fr; } .clue-photo img { max-height: 380px; } }
+
+.game-song { --art: #ffe08a; --art-glow: #6b5316; }
+
+/* Guess the Song: levels, 5-second clip, reveal card */
+.levels h1 { margin-bottom: 8px; }
+.levels > p { color: var(--muted); }
+.level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 12px; margin-top: 20px; }
+.level-tile { display: grid; justify-items: center; gap: 4px; padding: 16px 8px; min-height: 108px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-raised); color: var(--text); cursor: pointer; text-align: center; }
+.level-tile strong { font-size: 1.02rem; }
+.level-tile small { color: var(--muted); font-size: .82rem; font-weight: 700; }
+.level-glyph { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(237, 41, 62, .16); color: var(--red-light); }
+.level-open, .level-playing { border-color: var(--red); }
+.level-open:hover, .level-playing:hover { background: #2a1d22; }
+.level-done { border-color: #2a6b45; }
+.level-done .level-glyph { background: rgba(161, 233, 189, .16); color: var(--green); }
+.level-done small { color: var(--green); }
+.level-locked { opacity: .55; cursor: not-allowed; }
+.level-locked .level-glyph { background: rgba(255, 255, 255, .08); color: var(--muted); }
+.unlock-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0 0; color: var(--green); font-weight: 700; font-size: .92rem; }
+
+.clue-song { padding: 18px; display: grid; place-items: center; min-height: 190px; }
+.song-stage { display: grid; justify-items: center; gap: 14px; width: 100%; }
+.eq { display: flex; align-items: flex-end; justify-content: center; gap: 6px; height: 74px; }
+.eq i { display: block; width: 8px; height: 14px; border-radius: 4px; background: var(--red); opacity: .55; }
+.song-stage.playing .eq i { opacity: 1; animation: eq 0.9s ease-in-out infinite alternate; }
+.song-stage.playing .eq i:nth-child(2n) { animation-duration: .7s; animation-delay: -.2s; }
+.song-stage.playing .eq i:nth-child(3n) { animation-duration: 1.1s; animation-delay: -.5s; }
+.song-stage.playing .eq i:nth-child(5n) { animation-duration: .6s; animation-delay: -.1s; }
+@keyframes eq { from { height: 12px; } to { height: 70px; } }
+.song-status { margin: 0; font-weight: 700; color: var(--muted); }
+.song-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.song-actions .btn { min-height: 50px; }
+.song-card { width: 100%; text-align: left; }
+.song-card[hidden] { display: none; }
+.song-card h2 { margin: 0; font-size: clamp(1.4rem, 5vw, 1.9rem); line-height: 1.2; }
+.song-sub { margin: 4px 0 14px; color: var(--red-light); font-weight: 750; }
+.song-card dl { margin: 0; display: grid; gap: 8px; }
+.song-card dl div { display: grid; grid-template-columns: 82px 1fr; gap: 10px; }
+.song-card dt { color: var(--muted); font-size: .86rem; font-weight: 700; }
+.song-card dd { margin: 0; font-weight: 650; }
+.song-note { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #4c303c; color: var(--muted); font-size: .92rem; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .song-stage.playing .eq i { animation: none; height: 40px; } }
+.levels { padding: clamp(18px, 4vw, 30px); }

@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto';
+import { songLevels } from './songs-data.js';
 
 export function shuffle(values) {
   const list = [...values];
@@ -178,7 +179,22 @@ function photoSets() {
 }
 
 export function starterSets() {
-  return [...photoSets(), ...regularSets()];
+  return [...photoSets(), ...songSets(), ...regularSets()];
+}
+
+function songSets() {
+  return songLevels.map((level, index) => ({
+    id: `starter-song-${String(index + 1).padStart(2, '0')}`, industry: 'tollywood', mode: 'song', title: `Level ${index + 1}`, starter: true,
+    questions: level.map(song => {
+      const options = shuffle([song.title, ...shuffle(level.map(other => other.title).filter(title => title !== song.title)).slice(0, 3)]);
+      const { title, ...details } = song;
+      delete details.id; delete details.replay;
+      return {
+        media: `/media/song-${song.id}.mp3`, alt: 'A five-second vocal clip. The song is revealed after listening.',
+        details, aliases: [], options, correct: options.indexOf(title),
+      };
+    }),
+  }));
 }
 
 function regularSets() {

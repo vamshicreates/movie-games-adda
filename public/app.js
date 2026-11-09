@@ -53,7 +53,7 @@ function industryOptions(industries, value) {
 function lobbyURL(industry) {
   return industry === 'tollywood' ? '/#games' : `/?industry=${encodeURIComponent(industry)}#games`;
 }
-async function startRound(industry, mode, trigger, answerFormat) {
+async function startRound(industry, mode, trigger, answerFormat, level) {
   if (openingRound) return;
   openingRound = true;
   const label = trigger.querySelector('.format-label') ?? trigger;
@@ -63,7 +63,7 @@ async function startRound(industry, mode, trigger, answerFormat) {
   try {
     const round = await api('/rounds', {
       method: 'POST',
-      body: { industry, mode, answerFormat },
+      body: { industry, mode, answerFormat, ...(level ? { level } : {}) },
       signal: AbortSignal.timeout(8000),
     });
     if (!trigger.isConnected) return;
@@ -89,6 +89,32 @@ async function startRound(industry, mode, trigger, answerFormat) {
 function beginRound(industry, mode, trigger) {
   if (modes[mode].reveal) return startRound(industry, mode, trigger, 'reveal');
   chooseFormat(industry, mode);
+}
+
+function showLevels(data, industryId, modeId) {
+  const mode = modes[modeId];
+  const levels = data.levels.filter(item => item.industry === industryId && item.mode === modeId);
+  const done = levels.filter(item => item.state === 'done').length;
+  document.title = `${mode.name} | Movie Games Adda`;
+  main.innerHTML = `<div class="shell play-shell"><a href="${lobbyURL(industryId)}" class="back-link">${icon('back', 18)} All games</a>
+    <section class="panel levels">
+      <p class="subtle">${esc(mode.name)}</p>
+      <h1 id="question-title" tabindex="-1">Choose a level</h1>
+      <p>Each level has ten songs. Finish a level to unlock the next one. ${done} of ${levels.length} complete.</p>
+      <div class="level-grid">${levels.map(item => {
+        const locked = item.state === 'locked';
+        const label = { done: `${item.score} / 10`, playing: 'Resume', open: 'Start', locked: 'Locked' }[item.state];
+        const glyph = item.state === 'done' ? icon('check', 18) : locked ? icon('lock', 18) : icon('play', 18);
+        return `<button type="button" class="level-tile level-${item.state}" data-level="${item.level}" ${locked || item.state === 'done' ? 'disabled' : ''} aria-label="Level ${item.level}, ${label}">
+          <span class="level-glyph">${glyph}</span><strong>Level ${item.level}</strong><small>${label}</small></button>`;
+      }).join('')}</div>
+      <p class="status" role="status"></p>
+    </section></div>`;
+  main.querySelectorAll('[data-level]').forEach(el => {
+    el.addEventListener('click', action(el, () => startRound(industryId, modeId, el, 'reveal', Number(el.dataset.level))));
+  });
+  main.querySelector('#question-title').focus({ preventScroll: true });
+  window.scrollTo(0, 0);
 }
 
 let revealTimer;
@@ -125,6 +151,12 @@ function home(data) {
   const statsText = id => {
     const { live, played } = stats(id);
     const active = activeRound(id);
+    if (modes[id].levels) {
+      const list = data.levels.filter(item => item.industry === industry.id && item.mode === id);
+      const finished = list.filter(item => item.state === 'done').length;
+      if (!list.length) return 'New questions coming';
+      return finished === list.length ? 'All levels complete' : `${list.length} levels · ${finished} done`;
+    }
     if (active) return answerFormats[active.answerFormat].label;
     if (!live) return 'New questions coming';
     if (live === played) return placeholder;
@@ -132,7 +164,7 @@ function home(data) {
   };
   const games = Object.entries(modes).map(([id, mode]) => {
     const active = activeRound(id);
-    const ready = stats(id).live > stats(id).played || active;
+    const ready = stats(id).live > stats(id).played || active || (modes[id].levels && stats(id).live > 0);
     return `<article class="game-card game-${id}">
       <div class="card-visual">${cardArt(id)}<span class="card-chip">${icon(id, 14)}${esc(mode.label)}</span></div>
       <div class="card-body">
@@ -172,6 +204,7 @@ function home(data) {
   </div>`;
   main.querySelectorAll('[data-mode]').forEach(el => el.addEventListener('click', action(el, () => {
     const mode = el.dataset.mode;
+    if (modes[mode].levels) return showLevels(data, industry.id, mode);
     const active = activeRound(mode);
     if (active) return startRound(industry.id, mode, el, active.answerFormat);
     return beginRound(industry.id, mode, el);
@@ -189,21 +222,26 @@ function showRound(round) {
   const mode = modes[round.mode];
   const typed = round.answerFormat === 'typed';
   const reveal = round.answerFormat === 'reveal';
+  const song = reveal && mode.clue === 'audio';
   clearInterval(revealTimer);
   const back = lobbyURL(round.industry);
   document.title = `${mode.name} | Movie Games Adda`;
   if (round.complete) {
     main.innerHTML = `<div class="shell play-shell"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>
       <section class="results panel">
-        <div class="trophy">${icon('trophy', 32)}</div><p class="subtle">${esc(mode.name)} · ${esc(round.industryName)} · ${reveal ? 'Guess & reveal' : typed ? 'Typed answers' : 'Multiple choice'}</p>
+        <div class="trophy">${icon('trophy', 32)}</div><p class="subtle">${esc(mode.name)} · ${esc(round.industryName)}${round.level ? ` · Level ${round.level}` : ''} · ${reveal ? 'Guess & reveal' : typed ? 'Typed answers' : 'Multiple choice'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
         <div class="score">${round.score}<span> / 10</span></div>
         <p>${reveal ? `You recognised ${round.score} of 10.` : `You got ${round.score} of 10 correct.`}</p>
-        <div class="result-actions"><button type="button" class="btn primary" id="replay">${icon('repeat', 19)} Play again</button><a class="btn secondary" href="${back}">Choose a game</a></div>
+        <div class="result-actions">${mode.levels
+          ? `<button type="button" class="btn primary" id="${round.nextLevel ? 'next-level' : 'all-levels'}">${round.nextLevel ? `Continue to Level ${round.nextLevel} ${icon('arrow', 18)}` : 'All levels'}</button>`
+          : `<button type="button" class="btn primary" id="replay">${icon('repeat', 19)} Play again</button>`}<a class="btn secondary" href="${back}">Choose a game</a></div>${mode.levels && round.nextLevel ? `<p class="unlock-note">${icon('check', 16)} Level ${round.nextLevel} unlocked.</p>` : ''}
         <p class="status" role="status"></p>
         <details class="review"><summary>Review your answers</summary><ol>${round.review.map(item => `<li><span class="${item.correct ? 'correct-text' : 'incorrect-text'}">${icon(item.correct ? 'check' : 'close', 18)}</span><div>${esc(item.answer)}${item.correct ? '' : `<small>Your answer: ${esc(item.picked)}</small>`}</div></li>`).join('')}</ol></details>
       </section></div>`;
-    main.querySelector('#replay').addEventListener('click', action(main.querySelector('#replay'), () => beginRound(round.industry, round.mode, main.querySelector('#replay'))));
+    button('#replay', () => beginRound(round.industry, round.mode, main.querySelector('#replay')));
+    button('#next-level', () => startRound(round.industry, round.mode, main.querySelector('#next-level'), 'reveal', round.nextLevel));
+    button('#all-levels', async () => showLevels(await api('/catalog'), round.industry, round.mode));
     main.querySelector('#question-title').focus({ preventScroll: true });
     return;
   }
@@ -217,7 +255,17 @@ function showRound(round) {
     text: () => `<div class="clue clue-text">${esc(question.text)}</div>`,
   };
   const revealed = Boolean(feedback);
-  const clue = reveal
+  const d = question.details ?? {};
+  const row = (label, value) => value ? `<div><dt>${label}</dt><dd>${esc(value)}</dd></div>` : '';
+  const songClue = () => `<div class="clue clue-song ${revealed ? 'is-revealed' : ''}">
+      ${revealed ? '' : `<div class="song-stage" id="song-stage"><div class="eq" aria-hidden="true">${'<i></i>'.repeat(9)}</div>
+        <p class="song-status" id="song-status" role="status">Listen closely…</p><audio id="clip" preload="auto" src="${esc(question.media)}"></audio></div>`}
+      <div class="song-card" id="song-card" ${revealed ? '' : 'hidden'}>
+        <h2>${esc(question.name)}</h2><p class="song-sub">${esc(d.movie ?? '')}${d.year ? ` · ${esc(d.year)}` : ''}</p>
+        <dl>${row('Music', d.composer)}${row('Singers', d.singers)}${row('Lyrics', d.lyricist)}</dl>
+        ${d.note ? `<p class="song-note">${esc(d.note)}</p>` : ''}
+      </div></div>`;
+  const clue = song ? songClue() : reveal
     ? `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Blurred photo'}" draggable="false">
         ${revealed ? '' : '<div class="photo-timer" aria-live="off"><span id="count">5</span></div><div class="photo-bar" aria-hidden="true"><i></i></div>'}
         <figcaption id="reveal-name" ${revealed ? '' : 'hidden'}>${esc(question.name)}</figcaption></figure>`
@@ -230,7 +278,7 @@ function showRound(round) {
   const revealControl = feedback
     ? `<p class="submitted-guess"><strong>You said</strong> ${feedback.correct ? 'I guessed it' : 'I didn’t'}</p>`
     : `<div class="reveal-actions" id="reveal-actions" hidden><button type="button" class="btn guess-yes" data-self="0">${icon('check', 20)} Yes, I guessed</button><button type="button" class="btn guess-no" data-self="1">${icon('close', 20)} No, I didn’t</button></div>
-       <button type="button" class="btn secondary reveal-now" id="reveal-now">Reveal now</button>`;
+       ${song ? '<div class="song-actions" id="song-actions"><button type="button" class="btn secondary" id="play-clip">Play clip</button><button type="button" class="btn primary" id="reveal-song">Reveal song</button></div>' : '<button type="button" class="btn secondary reveal-now" id="reveal-now">Reveal now</button>'}`;
   const answerControl = reveal ? revealControl : typed ? (feedback
     ? `<p class="submitted-guess"><strong>Your answer</strong> ${esc(feedback.guess)}</p>`
     : `<form class="typed-answer"><label>Your answer<input name="guess" type="text" required maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Type your guess"></label><button class="btn primary" type="submit">Submit answer</button></form>`)
@@ -270,7 +318,28 @@ function showRound(round) {
       } finally { pending = false; }
     }));
   });
-  if (reveal && !feedback) {
+  if (song && !feedback) {
+    const clip = main.querySelector('#clip');
+    const statusText = main.querySelector('#song-status');
+    const stage = main.querySelector('#song-stage');
+    const playButton = main.querySelector('#play-clip');
+    const left = () => Math.max(0, Math.ceil(5 - clip.currentTime));
+    clip.addEventListener('playing', () => { stage.classList.add('playing'); playButton.textContent = 'Play again'; });
+    clip.addEventListener('timeupdate', () => { statusText.textContent = `Listening… ${left()}`; });
+    clip.addEventListener('ended', () => { stage.classList.remove('playing'); statusText.textContent = 'Clip finished. Do you know it?'; });
+    const play = () => { clip.currentTime = 0; return clip.play(); };
+    playButton.addEventListener('click', () => { play().catch(() => { statusText.textContent = 'Tap Play clip to listen.'; }); });
+    play().catch(() => { statusText.textContent = 'Tap Play clip to listen.'; });
+    main.querySelector('#reveal-song').addEventListener('click', () => {
+      clip.pause();
+      stage.remove();
+      main.querySelector('.clue-song').classList.add('is-revealed');
+      main.querySelector('#song-card').hidden = false;
+      main.querySelector('#song-actions').remove();
+      main.querySelector('#reveal-actions').hidden = false;
+    });
+  }
+  if (reveal && !song && !feedback) {
     clearInterval(revealTimer);
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
