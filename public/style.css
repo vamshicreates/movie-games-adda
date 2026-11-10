@@ -352,7 +352,7 @@ input[type="file"] { padding: 8px; }
 }
 @media (max-width: 640px) {
   .shell { width: calc(100% - 32px); }
-  .header-inner { min-height: 56px; gap: 8px; }
+  .header-inner { min-height: 48px; gap: 8px; }
   .brand { font-size: 1rem; gap: 8px; }
   .brand img { width: 28px; height: 28px; }
   nav { gap: 8px; }
@@ -375,9 +375,16 @@ input[type="file"] { padding: 8px; }
   .play-shell { padding-top: 8px; }
   .options { grid-template-columns: 1fr; }
   .option { min-height: 52px; }
-  .play-top { margin-bottom: 8px; }
+  .play-top { margin-bottom: 0; }
+  .play-top .back-link, .play-top .sound-toggle { min-height: 40px; }
   /* Fit the whole question on one screen: header, title, photo and both buttons, no scrolling. */
-  .clue-photo { height: clamp(220px, calc(100vh - 288px), 520px); height: clamp(220px, calc(100dvh - 288px), 520px); }
+  .quiz-meta { flex-wrap: nowrap; gap: 8px; font-size: .8125rem; line-height: 1.3; }
+  .quiz-meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quiz-meta strong { flex: none; }
+  .quiz h1 { font-size: 1.25rem; margin: 2px 0 8px; }
+  .reveal-actions, .reveal-now { margin-top: 10px; }
+  .reveal-actions .btn { min-height: 48px; }
+  .clue-photo { height: clamp(150px, calc(100vh - 226px), 520px); height: clamp(150px, calc(100dvh - 226px), 520px); }
   .editor-meta { grid-template-columns: 1fr; }
   .set-list li { align-items: start; }
   .set-actions { min-width: 104px; }
