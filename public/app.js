@@ -2,6 +2,9 @@ import { answerFormats, modes } from './modes.js';
 import { icon, cardArt } from './art.js';
 import * as sound from './sound.js';
 
+// Seconds the blurred photo is shown before time is up.
+const photoSeconds = 10;
+
 const main = document.querySelector('main');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const letters = ['A', 'B', 'C', 'D'];
@@ -272,7 +275,7 @@ function showRound(round) {
       </div></div>`;
   const clue = song ? songClue() : reveal
     ? `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Blurred photo'}" draggable="false">
-        ${revealed ? '' : '<div class="photo-timer" aria-live="off"><span id="count">5</span></div>'}
+        ${revealed ? '' : `<div class="photo-timer" aria-live="off"><span id="count">${photoSeconds}</span></div>`}
         <figcaption id="reveal-name" ${revealed ? '' : 'hidden'}>${esc(question.name)}</figcaption></figure>`
     : (clueRenderers[mode.clue ?? round.mode] ?? clueRenderers.text)();
   const options = question.options?.map((option, index) => {
@@ -357,10 +360,10 @@ function showRound(round) {
     clearInterval(revealTimer);
     sound.stop();
     sound.play('appear');
-    sound.tick(5);
+    sound.tick(photoSeconds);
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
-    let left = 5;
+    let left = photoSeconds;
     // Typed games keep the photo blurred and the name hidden until an answer (or Pass) is in.
     const clearPhoto = () => {
       clearInterval(revealTimer);
