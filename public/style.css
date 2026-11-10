@@ -104,12 +104,12 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
   .game-card:hover { background: var(--raised); box-shadow: 0 0 0 1px var(--hairline-strong); }
 }
 .game-card:focus-within { box-shadow: 0 0 0 1px var(--hairline-strong); }
-.card-visual { position: relative; isolation: isolate; display: grid; place-items: center; height: 184px; overflow: hidden; background: #1b1416; color: var(--red-ink); }
+.card-visual { position: relative; isolation: isolate; display: grid; place-items: center; aspect-ratio: 16 / 9; overflow: hidden; background: #1b1416; color: var(--red-ink); }
 .card-art { width: min(100%, 240px); height: 100%; }
-.game-hero .card-visual::before, .game-heroine .card-visual::before { content: ''; position: absolute; inset: -24px; z-index: -1; background-size: cover; background-position: 50% 12%; filter: blur(18px) saturate(.95); }
-.game-hero .card-visual::before { background-image: url('/media/hero-6.jpg'); }
-.game-heroine .card-visual::before { background-image: url('/media/heroine-4.jpg'); }
-.game-hero .card-visual::after, .game-heroine .card-visual::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, #100c0d99, transparent 70%); }
+/* Actor and Actress cards use a 16:9 cover: three lightly blurred faces and the game name. */
+.game-hero .card-visual, .game-heroine .card-visual { background-size: cover; background-position: center; }
+.game-hero .card-visual { background-image: url('/covers/actor.jpg'); }
+.game-heroine .card-visual { background-image: url('/covers/actress.jpg'); }
 .game-hero .card-art, .game-heroine .card-art { display: none; }
 .card-body { display: flex; flex-direction: column; flex: 1; padding: 20px 20px 12px; }
 .card-body h3 { font-size: 1.25rem; letter-spacing: -.01em; }
@@ -365,7 +365,6 @@ input[type="file"] { padding: 8px; }
   .games-section { margin-top: 48px; }
   .section-top { align-items: start; margin-bottom: 20px; }
   .game-grid { grid-template-columns: 1fr; gap: 12px; }
-  .card-visual { height: 144px; }
   .card-body { padding: 16px 16px 8px; }
   .soon-list { grid-template-columns: 1fr; gap: 20px; }
   .steps { grid-template-columns: 1fr; gap: 16px; }
