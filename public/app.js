@@ -315,14 +315,12 @@ function showRound(round) {
       if (pending) return;
       pending = true;
       try {
-        const hold = sound.react(Number(el.dataset.self) === 0);
-        const started = Date.now();
+        const reaction = sound.react(Number(el.dataset.self) === 0);
         el.classList.add('is-chosen');
         el.closest('.reveal-actions')?.classList.add('is-reacting');
         await post(`/rounds/${round.id}/answer`, { questionId: question.id, picked: Number(el.dataset.self) });
         const nextRound = await post(`/rounds/${round.id}/next`, { questionId: question.id });
-        const wait = hold - (Date.now() - started);
-        if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+        await Promise.race([reaction, new Promise(resolve => setTimeout(resolve, 4000))]);
         showRound(nextRound);
         window.scrollTo(0, 0);
       } finally { pending = false; }
@@ -351,8 +349,9 @@ function showRound(round) {
   }
   if (reveal && !song && !feedback) {
     clearInterval(revealTimer);
-    sound.stop();
+    sound.stop(['appear', 'tick', 'tick-hi', 'timesup']);
     sound.play('appear');
+    sound.tick(5);
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
     let left = 5;

@@ -13,7 +13,7 @@ const imageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const audioTypes = new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']);
 const types = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.woff2': 'font/woff2',
 };
 const maxUpload = 8 * 1024 * 1024;
 const hash = value => createHash('sha256').update(value).digest('hex');
