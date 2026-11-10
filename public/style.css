@@ -375,7 +375,9 @@ input[type="file"] { padding: 8px; }
   .play-shell { padding-top: 8px; }
   .options { grid-template-columns: 1fr; }
   .option { min-height: 52px; }
-  .clue-photo { height: clamp(300px, 56vh, 520px); }
+  .play-top { margin-bottom: 8px; }
+  /* Fit the whole question on one screen: header, title, photo and both buttons, no scrolling. */
+  .clue-photo { height: clamp(220px, calc(100vh - 288px), 520px); height: clamp(220px, calc(100dvh - 288px), 520px); }
   .editor-meta { grid-template-columns: 1fr; }
   .set-list li { align-items: start; }
   .set-actions { min-width: 104px; }
