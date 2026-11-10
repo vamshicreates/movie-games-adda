@@ -1,5 +1,6 @@
 import { answerFormats, modes } from './modes.js';
 import { icon, cardArt } from './art.js';
+import * as sound from './sound.js';
 
 const main = document.querySelector('main');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -287,7 +288,7 @@ function showRound(round) {
     : `<form class="typed-answer"><label>Your answer<input name="guess" type="text" required maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Type your guess"></label><button class="btn primary" type="submit">Submit answer</button></form>`)
     : `<div class="options">${options}</div>`;
   main.innerHTML = `<div class="shell play-shell">
-    <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a></div>
+    <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>${reveal && !song ? `<button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="${sound.isMuted()}">${icon(sound.isMuted() ? 'mute' : 'volume', 18)}<span>${sound.isMuted() ? 'Sound off' : 'Sound on'}</span></button>` : ''}</div>
     <section class="panel quiz" aria-labelledby="question-title">
       <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
@@ -314,8 +315,15 @@ function showRound(round) {
       if (pending) return;
       pending = true;
       try {
+        const hold = sound.react(Number(el.dataset.self) === 0);
+        const started = Date.now();
+        el.classList.add('is-chosen');
+        el.closest('.reveal-actions')?.classList.add('is-reacting');
         await post(`/rounds/${round.id}/answer`, { questionId: question.id, picked: Number(el.dataset.self) });
-        showRound(await post(`/rounds/${round.id}/next`, { questionId: question.id }));
+        const nextRound = await post(`/rounds/${round.id}/next`, { questionId: question.id });
+        const wait = hold - (Date.now() - started);
+        if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+        showRound(nextRound);
         window.scrollTo(0, 0);
       } finally { pending = false; }
     }));
@@ -343,6 +351,8 @@ function showRound(round) {
   }
   if (reveal && !song && !feedback) {
     clearInterval(revealTimer);
+    sound.stop();
+    sound.play('appear');
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
     let left = 5;
@@ -359,10 +369,17 @@ function showRound(round) {
     revealTimer = setInterval(() => {
       left -= 1;
       if (count) count.textContent = String(left);
+      sound.tick(left);
       if (left <= 0) showName();
     }, 1000);
-    main.querySelector('#reveal-now').addEventListener('click', showName);
+    main.querySelector('#reveal-now').addEventListener('click', () => { sound.stop(['appear', 'tick', 'tick-hi']); showName(); });
   }
+  main.querySelector('#sound-toggle')?.addEventListener('click', event => {
+    const off = !sound.isMuted();
+    sound.setMuted(off);
+    event.currentTarget.setAttribute('aria-pressed', String(off));
+    event.currentTarget.innerHTML = `${icon(off ? 'mute' : 'volume', 18)}<span>${off ? 'Sound off' : 'Sound on'}</span>`;
+  });
   const typedForm = main.querySelector('.typed-answer');
   if (typedForm) {
     typedForm.addEventListener('submit', action(typedForm.querySelector('button'), () => {

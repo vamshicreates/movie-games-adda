@@ -210,6 +210,12 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
 .clue-photo figcaption[hidden] { display: none; }
 .reveal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
 .reveal-actions[hidden] { display: none; }
+.sound-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; margin-right: -4px; background: none; border: 0; border-radius: 8px; color: var(--text-2); font: inherit; font-size: .875rem; font-weight: 500; cursor: pointer; transition: color 150ms var(--ease), background-color 150ms var(--ease); }
+.sound-toggle[aria-pressed="true"] { color: var(--muted); }
+@media (hover: hover) { .sound-toggle:hover { color: var(--text); background: var(--raised); } }
+.reveal-actions.is-reacting { pointer-events: none; }
+.reveal-actions.is-reacting .btn:not(.is-chosen) { opacity: .4; transition: opacity 200ms var(--ease); }
+.reveal-actions.is-reacting .btn.is-chosen { opacity: 1; }
 .reveal-actions .btn { min-height: 52px; color: #fff; font-weight: 600; box-shadow: inset 0 1px 0 rgb(255 255 255 / .14); }
 .guess-yes { background: var(--green-fill); }
 .guess-no { background: var(--no-fill); }
