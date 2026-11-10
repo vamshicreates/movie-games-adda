@@ -361,10 +361,9 @@ function showRound(round) {
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
     let left = 5;
-    // Typed games unblur the photo when time is up but keep the name hidden until the answer is in.
+    // Typed games keep the photo blurred and the name hidden until an answer (or Pass) is in.
     const clearPhoto = () => {
       clearInterval(revealTimer);
-      main.querySelector('.clue-photo').classList.add('is-clear');
       main.querySelector('.photo-timer')?.remove();
       if (window.matchMedia('(pointer: fine)').matches) main.querySelector('#guess')?.focus({ preventScroll: true });
     };

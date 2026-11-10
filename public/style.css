@@ -224,7 +224,6 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
   .guess-no:hover { background: #d9293d; }
 }
 .reveal-now { width: 100%; margin-top: 16px; }
-.clue-photo.is-clear img { filter: none; transform: none; }
 .guess-form { display: grid; gap: 8px; margin-top: 16px; }
 .guess-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .guess-row input { min-height: 52px; font-size: 1rem; }
