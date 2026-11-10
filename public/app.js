@@ -163,28 +163,29 @@ function home(data) {
     if (live === played) return placeholder;
     return live - played === 1 ? '10 questions' : `${live - played} fresh rounds`;
   };
-  const games = Object.entries(modes).map(([id, mode]) => {
+  const liveModes = Object.entries(modes).filter(([, mode]) => !mode.soon);
+  const soonModes = Object.entries(modes).filter(([, mode]) => mode.soon);
+  const games = liveModes.map(([id, mode]) => {
     const active = activeRound(id);
     const ready = stats(id).live > stats(id).played || active || (modes[id].levels && stats(id).live > 0);
-    return `<article class="game-card game-${id} ${mode.soon ? 'game-soon' : ''}">
-      <div class="card-visual">${cardArt(id)}<span class="card-chip">${icon(id, 14)}${esc(mode.label)}</span></div>
+    return `<article class="game-card game-${id}">
+      <div class="card-visual">${cardArt(id)}</div>
       <div class="card-body">
         <h3>${esc(mode.name)}</h3><p>${esc(mode.desc)}</p>
         <div class="card-bottom"><span>${esc(statsText(id))}</span>
-        ${mode.soon ? '<span class="soon-pill">Coming soon</span>' : `<button type="button" class="round-link" data-mode="${id}" ${ready ? '' : 'disabled'} aria-label="${active ? 'Resume' : 'Play'} ${esc(mode.name)}">${active ? 'Resume' : 'Play'} ${icon('arrow', 16)}</button>`}</div>
+        <button type="button" class="round-link" data-mode="${id}" ${ready ? '' : 'disabled'} aria-label="${active ? 'Resume' : 'Play'} ${esc(mode.name)}">${active ? 'Resume' : 'Play'} ${icon('arrow', 16)}</button></div>
       </div>
     </article>`;
   }).join('');
+  const soonItems = soonModes.map(([id, mode]) => `<article class="soon-item">${icon(id, 20)}<h4>${esc(mode.name)}</h4><p>${esc(mode.desc)}</p></article>`).join('');
   document.title = `Movie Games Adda | The ${industry.name} movie quiz`;
   main.innerHTML = `<div class="shell home">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <div class="hero-label"><span></span>${esc(industry.name)} Edition</div>
         <h1 id="hero-title">The ${esc(industry.name)}<br>movie quiz.</h1>
-        <p>Spot a star, catch a song, and unlock new levels. How well do you know your movies?</p>
-        <a class="btn primary" href="#games">${icon('play', 20)} Explore games</a>
+        <p>Name actors from a blurred photo and songs from five seconds of audio. Ten questions a level.</p>
+        <a class="btn primary" href="#games">Choose a game ${icon('arrow', 18)}</a>
       </div>
-      <div class="hero-stamp" aria-hidden="true">${icon('film', 16)} <span>THE MOVIE QUIZ CLUB</span></div>
     </section>
     <section id="games" class="games-section" aria-labelledby="games-title">
       <div class="section-top">
@@ -193,13 +194,14 @@ function home(data) {
       </div>
       <p class="status" role="status"></p>
       <div class="game-grid">${games}</div>
+      <div class="soon"><h3>Coming soon</h3><div class="soon-list">${soonItems}</div></div>
     </section>
     <section id="how" class="how" aria-labelledby="how-title">
       <h2 id="how-title">How to play</h2>
       <div class="steps">
-        <div>${icon('film', 22)}<div><strong>Pick a game</strong><p>Each round has ten questions.</p></div></div>
-        <div>${icon('trophy', 22)}<div><strong>Make your guesses</strong><p>Pick from four choices or type your own answer.</p></div></div>
-        <div>${icon('repeat', 22)}<div><strong>Play a fresh round</strong><p>New sets appear as they’re published.</p></div></div>
+        <div>${icon('film', 20)}<div><strong>Pick a game</strong><p>Each level has ten questions.</p></div></div>
+        <div>${icon('play', 20)}<div><strong>Guess, then reveal</strong><p>Study the photo or clip, reveal the answer, and score yourself.</p></div></div>
+        <div>${icon('lock', 20)}<div><strong>Unlock the next level</strong><p>Finish a level to open the next one.</p></div></div>
       </div>
     </section>
   </div>`;
@@ -230,7 +232,7 @@ function showRound(round) {
   if (round.complete) {
     main.innerHTML = `<div class="shell play-shell"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>
       <section class="results panel">
-        <div class="trophy">${icon('trophy', 32)}</div><p class="subtle">${esc(mode.name)} · ${esc(round.industryName)}${round.level ? ` · Level ${round.level}` : ''} · ${reveal ? 'Guess & reveal' : typed ? 'Typed answers' : 'Multiple choice'}</p>
+        <p class="subtle">${esc(mode.name)}${round.level ? ` · Level ${round.level}` : ''}${reveal ? '' : typed ? ' · Typed answers' : ' · Multiple choice'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
         <div class="score">${round.score}<span> / 10</span></div>
         <p>${reveal ? `You recognised ${round.score} of 10.` : `You got ${round.score} of 10 correct.`}</p>
@@ -268,7 +270,7 @@ function showRound(round) {
       </div></div>`;
   const clue = song ? songClue() : reveal
     ? `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Blurred photo'}" draggable="false">
-        ${revealed ? '' : '<div class="photo-timer" aria-live="off"><span id="count">5</span></div><div class="photo-bar" aria-hidden="true"><i></i></div>'}
+        ${revealed ? '' : '<div class="photo-timer" aria-live="off"><span id="count">5</span></div>'}
         <figcaption id="reveal-name" ${revealed ? '' : 'hidden'}>${esc(question.name)}</figcaption></figure>`
     : (clueRenderers[mode.clue ?? round.mode] ?? clueRenderers.text)();
   const options = question.options?.map((option, index) => {
@@ -285,10 +287,9 @@ function showRound(round) {
     : `<form class="typed-answer"><label>Your answer<input name="guess" type="text" required maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Type your guess"></label><button class="btn primary" type="submit">Submit answer</button></form>`)
     : `<div class="options">${options}</div>`;
   main.innerHTML = `<div class="shell play-shell">
-    <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a><span class="industry-pill">${icon(round.mode, 16)} ${esc(mode.name)}</span></div>
+    <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a></div>
     <section class="panel quiz" aria-labelledby="question-title">
-      <div class="quiz-meta"><span>${esc(round.industryName)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
-      <div class="progress" aria-hidden="true">${Array.from({ length: 10 }, (_, i) => `<i class="${i <= position ? 'filled' : ''}"></i>`).join('')}</div>
+      <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
       ${clue}
       ${round.starter && mode.clue === 'image' && !reveal ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
