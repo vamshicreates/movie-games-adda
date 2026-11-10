@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import { buildServer } from '../server.js';
+import { starterSets } from '../seed.js';
 
 const password = 'test-only-password';
 function set(number, industry = 'tollywood') {
@@ -210,21 +211,46 @@ test('games marked coming soon cannot be started and the audio game is gone', as
   assert.equal((await post('hero')).status, 201);
 });
 
-test('hero and heroine rounds are levels too, unlocking in order', async t => {
+test('hero and heroine rounds are typed levels: forgiving spelling, pass, and names stay hidden until answered', async t => {
   const { client } = await fixture(t);
   const player = client();
+  const names = new Map(starterSets().flatMap(item => item.questions.map(q => [q.media, q.options[q.correct]])).filter(([media]) => media));
   for (const mode of ['hero', 'heroine']) {
     const levels = () => player('/api/catalog').then(c => c.levels.filter(l => l.mode === mode));
-    assert.deepEqual((await levels()).map(l => l.state), (mode === 'hero' ? ['open', 'locked', 'locked'] : ['open', 'locked', 'locked']));
+    assert.deepEqual((await levels()).map(l => l.state), ['open', 'locked', 'locked']);
     await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 409);
     let round = await player('/api/rounds', { industry: 'tollywood', mode }, 201);
     assert.equal(round.level, 1);
     assert.equal(round.nextLevel, 2);
     for (let i = 0; i < 10; i++) {
-      round = await player(`/api/rounds/${round.id}/answer`, { questionId: round.question.id, picked: 0 });
+      const name = names.get(round.question.media);
+      assert.ok(name, round.question.media);
+      assert.equal(round.question.name, undefined, 'the name is not sent before answering');
+      assert.equal(round.question.options, undefined);
+      assert.ok(!JSON.stringify(round).includes(name), 'the answer is not anywhere in the payload');
+      const send = (body, expected) => player(`/api/rounds/${round.id}/answer`, { questionId: round.question.id, ...body }, expected);
+      if (i === 0) {
+        await send({}, 400);
+        round = await send({ pass: true });
+        assert.equal(round.feedback.passed, true);
+        assert.equal(round.feedback.correct, false);
+      } else if (i === 1) {
+        round = await send({ guess: 'Zzyzx Qwerty' });
+        assert.equal(round.feedback.correct, false);
+      } else if (i === 2) {
+        const slip = name.toLowerCase().replace(/h/g, '').replace(/(.)\1/g, '$1');
+        round = await send({ guess: `  ${slip.toUpperCase()} ` });
+        assert.equal(round.feedback.correct, true, `${slip} should count for ${name}`);
+      } else {
+        round = await send({ guess: name });
+        assert.equal(round.feedback.correct, true);
+      }
+      assert.equal(round.question.name, name, 'the name is shown once answered');
+      assert.equal(round.feedback.correctAnswer, name);
       round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
     }
-    assert.equal(round.score, 10);
+    assert.equal(round.score, 8);
+    assert.deepEqual(round.review.slice(0, 2).map(item => item.picked), ['Passed', 'Zzyzx Qwerty']);
     assert.deepEqual((await levels()).map(l => l.state).slice(0, 2), ['done', 'open']);
     round = await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 201);
     assert.equal(round.level, 2);

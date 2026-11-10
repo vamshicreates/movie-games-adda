@@ -224,6 +224,13 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
   .guess-no:hover { background: #d9293d; }
 }
 .reveal-now { width: 100%; margin-top: 16px; }
+.clue-photo.is-clear img { filter: none; transform: none; }
+.guess-form { display: grid; gap: 8px; margin-top: 16px; }
+.guess-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.guess-row input { min-height: 52px; font-size: 1rem; }
+.guess-row .btn { min-height: 52px; padding-inline: 24px; }
+.guess-pass { min-height: 44px; }
+.typed-photo .clue-photo { height: clamp(300px, calc(100vh - 380px), 560px); height: clamp(300px, calc(100dvh - 380px), 560px); }
 
 /* Results: the score is the page */
 .results { text-align: center; padding-top: 24px; }
@@ -384,6 +391,11 @@ input[type="file"] { padding: 8px; }
   .reveal-actions, .reveal-now { margin-top: 10px; }
   .reveal-actions .btn { min-height: 48px; }
   .clue-photo { height: clamp(150px, calc(100vh - 226px), 520px); height: clamp(150px, calc(100dvh - 226px), 520px); }
+  .guess-form { gap: 6px; margin-top: 10px; }
+  .guess-row input, .guess-row .btn { min-height: 48px; }
+  .guess-row .btn { padding-inline: 18px; }
+  .guess-pass { min-height: 40px; }
+  .typed-photo .clue-photo { height: clamp(120px, calc(100vh - 286px), 520px); height: clamp(120px, calc(100dvh - 286px), 520px); }
   .editor-meta { grid-template-columns: 1fr; }
   .set-list li { align-items: start; }
   .set-actions { min-width: 104px; }

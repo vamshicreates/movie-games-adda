@@ -2,7 +2,7 @@
   "framework": null,
   "functions": {
     "api/index.js": {
-      "includeFiles": "{public/**,seed.js,songs-data.js,server.js}"
+      "includeFiles": "{public/**,seed.js,songs-data.js,names.js,server.js}"
     }
   },
   "rewrites": [

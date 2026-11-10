@@ -201,7 +201,7 @@ function home(data) {
       <h2 id="how-title">How to play</h2>
       <div class="steps">
         <div>${icon('film', 20)}<div><strong>Pick a game</strong><p>Each level has ten questions.</p></div></div>
-        <div>${icon('play', 20)}<div><strong>Guess, then reveal</strong><p>Study the photo or clip, reveal the answer, and score yourself.</p></div></div>
+        <div>${icon('play', 20)}<div><strong>Type it, or pass</strong><p>Name the actor or actress from the photo. Close spellings count. For songs, reveal the answer and score yourself.</p></div></div>
         <div>${icon('lock', 20)}<div><strong>Unlock the next level</strong><p>Finish a level to open the next one.</p></div></div>
       </div>
     </section>
@@ -227,6 +227,7 @@ function showRound(round) {
   const typed = round.answerFormat === 'typed';
   const reveal = round.answerFormat === 'reveal';
   const song = reveal && mode.clue === 'audio';
+  const photoGuess = reveal && !song && Boolean(mode.typedGuess);
   clearInterval(revealTimer);
   const back = lobbyURL(round.industry);
   document.title = `${mode.name} | Movie Games Adda`;
@@ -236,7 +237,7 @@ function showRound(round) {
         <p class="subtle">${esc(mode.name)}${round.level ? ` · Level ${round.level}` : ''}${reveal ? '' : typed ? ' · Typed answers' : ' · Multiple choice'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
         <div class="score">${round.score}<span> / 10</span></div>
-        <p>${reveal ? `You recognised ${round.score} of 10.` : `You got ${round.score} of 10 correct.`}</p>
+        <p>${reveal ? (photoGuess ? `You named ${round.score} of 10.` : `You recognised ${round.score} of 10.`) : `You got ${round.score} of 10 correct.`}</p>
         <div class="result-actions">${mode.levels
           ? `<button type="button" class="btn primary" id="${round.nextLevel ? 'next-level' : 'all-levels'}">${round.nextLevel ? `Continue to Level ${round.nextLevel} ${icon('arrow', 18)}` : 'All levels'}</button>`
           : `<button type="button" class="btn primary" id="replay">${icon('repeat', 19)} Play again</button>`}<a class="btn secondary" href="${back}">Choose a game</a></div>${mode.levels && round.nextLevel ? `<p class="unlock-note">${icon('check', 16)} Level ${round.nextLevel} unlocked.</p>` : ''}
@@ -280,7 +281,12 @@ function showRound(round) {
     return `<button type="button" class="option ${correct ? 'option-correct' : ''} ${wrong ? 'option-wrong' : ''}" data-pick="${index}" ${feedback ? 'disabled' : ''}><span class="option-letter">${letters[index]}</span><span>${esc(option)}</span>${correct || wrong ? icon(correct ? 'check' : 'close', 19) : ''}</button>`;
   }).join('');
   const revealControl = feedback
-    ? `<p class="submitted-guess"><strong>You said</strong> ${feedback.correct ? 'I guessed it' : 'I didn’t'}</p>`
+    ? `<p class="submitted-guess">${photoGuess ? (feedback.passed ? '<strong>You passed</strong>' : `<strong>You typed</strong> ${esc(feedback.guess)}`) : `<strong>You said</strong> ${feedback.correct ? 'I guessed it' : 'I didn’t'}`}</p>`
+    : photoGuess ? `<form class="guess-form" id="guess-form" novalidate>
+        <label class="sr-only" for="guess">Your answer</label>
+        <div class="guess-row"><input id="guess" name="guess" type="text" maxlength="120" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Type the name"><button class="btn primary" type="submit">Submit</button></div>
+        <button type="button" class="btn secondary guess-pass" id="guess-pass">Pass</button>
+      </form>`
     : `<div class="reveal-actions" id="reveal-actions" hidden><button type="button" class="btn guess-yes" data-self="0">${icon('check', 20)} Yes, I guessed</button><button type="button" class="btn guess-no" data-self="1">${icon('close', 20)} No, I didn’t</button></div>
        ${song ? '<div class="song-actions" id="song-actions"><button type="button" class="btn secondary" id="play-clip">Play clip</button><button type="button" class="btn primary" id="reveal-song">Reveal song</button></div>' : '<button type="button" class="btn secondary reveal-now" id="reveal-now">Reveal now</button>'}`;
   const answerControl = reveal ? revealControl : typed ? (feedback
@@ -289,7 +295,7 @@ function showRound(round) {
     : `<div class="options">${options}</div>`;
   main.innerHTML = `<div class="shell play-shell">
     <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>${reveal && !song ? `<button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="${sound.isMuted()}">${icon(sound.isMuted() ? 'mute' : 'volume', 18)}<span>${sound.isMuted() ? 'Sound off' : 'Sound on'}</span></button>` : ''}</div>
-    <section class="panel quiz" aria-labelledby="question-title">
+    <section class="panel quiz${photoGuess ? ' typed-photo' : ''}" aria-labelledby="question-title">
       <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
       ${clue}
@@ -349,12 +355,19 @@ function showRound(round) {
   }
   if (reveal && !song && !feedback) {
     clearInterval(revealTimer);
-    sound.stop(['appear', 'tick', 'tick-hi', 'timesup']);
+    sound.stop();
     sound.play('appear');
     sound.tick(5);
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
     let left = 5;
+    // Typed games unblur the photo when time is up but keep the name hidden until the answer is in.
+    const clearPhoto = () => {
+      clearInterval(revealTimer);
+      main.querySelector('.clue-photo').classList.add('is-clear');
+      main.querySelector('.photo-timer')?.remove();
+      if (window.matchMedia('(pointer: fine)').matches) main.querySelector('#guess')?.focus({ preventScroll: true });
+    };
     const showName = () => {
       clearInterval(revealTimer);
       main.querySelector('.clue-photo').classList.add('is-revealed');
@@ -369,9 +382,9 @@ function showRound(round) {
       left -= 1;
       if (count) count.textContent = String(left);
       sound.tick(left);
-      if (left <= 0) showName();
+      if (left <= 0) (photoGuess ? clearPhoto : showName)();
     }, 1000);
-    main.querySelector('#reveal-now').addEventListener('click', () => { sound.stop(['appear', 'tick', 'tick-hi']); showName(); });
+    main.querySelector('#reveal-now')?.addEventListener('click', () => { sound.stop(['appear', 'tick', 'tick-hi']); showName(); });
   }
   main.querySelector('#sound-toggle')?.addEventListener('click', event => {
     const off = !sound.isMuted();
@@ -379,6 +392,32 @@ function showRound(round) {
     event.currentTarget.setAttribute('aria-pressed', String(off));
     event.currentTarget.innerHTML = `${icon(off ? 'mute' : 'volume', 18)}<span>${off ? 'Sound off' : 'Sound on'}</span>`;
   });
+  const guessForm = main.querySelector('#guess-form');
+  if (guessForm) {
+    const controls = guessForm.querySelectorAll('input, button');
+    const send = async body => {
+      if (pending) return;
+      pending = true;
+      clearInterval(revealTimer);
+      sound.stop();
+      controls.forEach(el => { el.disabled = true; });
+      try {
+        const next = await post(`/rounds/${round.id}/answer`, { questionId: question.id, ...body });
+        if (!body.pass) sound.react(Boolean(next.feedback?.correct));
+        showRound(next);
+      } catch (error) {
+        status(error.message, true);
+        controls.forEach(el => { el.disabled = false; });
+      } finally { pending = false; }
+    };
+    guessForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const value = guessForm.elements.guess.value.trim();
+      if (!/[\p{L}\p{N}]/u.test(value)) { status('Type a name, or press Pass.', true); guessForm.elements.guess.focus(); return; }
+      send({ guess: value });
+    });
+    main.querySelector('#guess-pass').addEventListener('click', () => send({ pass: true }));
+  }
   const typedForm = main.querySelector('.typed-answer');
   if (typedForm) {
     typedForm.addEventListener('submit', action(typedForm.querySelector('button'), () => {
@@ -390,6 +429,7 @@ function showRound(round) {
     main.querySelector('#question-title').scrollIntoView({ block: 'nearest' });
   });
   if (feedback) main.querySelector('#next').focus({ preventScroll: true });
+  else if (photoGuess && window.matchMedia('(pointer: fine)').matches) main.querySelector('#guess').focus({ preventScroll: true });
   else main.querySelector('#question-title').focus({ preventScroll: true });
 }
 

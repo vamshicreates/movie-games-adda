@@ -6,6 +6,7 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { answerFormats, modes } from './public/modes.js';
 import { shuffle, starterAliases, starterSets } from './seed.js';
+import { guessIsCorrect } from './names.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(root, 'public');
@@ -278,13 +279,13 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     if (position === 10) return {
       ...header, complete: true, score: answers.filter(answer => answer.correct).length,
       review: questions.map(({ options, correct }, i) => ({
-        answer: options[correct], picked: answerFormat === 'reveal' ? 'Not recognised' : answers[i].guess ?? options[answers[i].picked], correct: answers[i].correct,
+        answer: options[correct], picked: answers[i].guess ?? (answers[i].passed ? 'Passed' : answerFormat === 'reveal' ? 'Not recognised' : options[answers[i].picked]), correct: answers[i].correct,
       })),
     };
     const { id: questionId, text, alt, media, details, options, correct } = questions[position];
     const question = { id: questionId, text, alt, media };
     if (answerFormat === 'multiple') question.options = options;
-    if (answerFormat === 'reveal') { question.name = options[correct]; if (details) question.details = details; }
+    if (answerFormat === 'reveal' && (!modes[mode].typedGuess || answers[position])) { question.name = options[correct]; if (details) question.details = details; }
     const answer = answers[position];
     const feedback = answer ? { ...answer, correctAnswer: options[correct] } : null;
     if (feedback && answerFormat === 'multiple') feedback.correctIndex = correct;
@@ -353,14 +354,22 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
       const who = player(req, res);
       if (get && !action) return json(res, publicRound(fetchRound(id, who)));
       if (post && action) {
-        const { questionId, picked, guess: rawGuess } = await readJson(req);
+        const { questionId, picked, guess: rawGuess, pass } = await readJson(req);
         const result = transaction(() => {
           const round = fetchRound(id, who);
           const question = JSON.parse(round.questions)[round.position];
           if (!question || question.id !== questionId) return round;
           const answers = JSON.parse(round.answers);
           if (action === 'answer' && !answers[round.position]) {
-            if (round.answer_format === 'reveal') {
+            if (round.answer_format === 'reveal' && modes[round.mode].typedGuess) {
+              if (pass === true) answers.push({ passed: true, correct: false });
+              else {
+                const guess = field(rawGuess, 120);
+                need(/[\p{L}\p{N}]/u.test(guess), 400, 'Type a name, or pass.');
+                const everyone = JSON.parse(round.questions).map(item => item.options[item.correct]);
+                answers.push({ guess, correct: guessIsCorrect(guess, question.options[question.correct], everyone) });
+              }
+            } else if (round.answer_format === 'reveal') {
               need(picked === 0 || picked === 1, 400, 'Choose Yes or No.');
               answers.push({ picked, correct: picked === 0 });
             } else if (round.answer_format === 'typed') {
