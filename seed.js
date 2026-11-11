@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { songLevels } from './songs-data.js';
+import { frameLevels } from './frames-data.js';
 
 export function shuffle(values) {
   const list = [...values];
@@ -9,19 +10,6 @@ export function shuffle(values) {
   }
   return list;
 }
-
-const frames = [
-  ['RRR', 'Two men charge toward a clash, one framed by flames and the other by water.'],
-  ['Baahubali: The Beginning', 'A man carries a large stone lingam through a river below a waterfall.'],
-  ['Eega', 'A large fly faces a startled man.'],
-  ['Pushpa: The Rise', 'A man in a rust-red shirt stands near a truck piled with timber in a forest.'],
-  ['Magadheera', 'A warrior on a white horse rears above a battlefield.'],
-  ['Arjun Reddy', 'A bearded surgeon stands alone in a hospital corridor.'],
-  ['Jersey', 'A cricketer walks onto an empty pitch in his batting gear.'],
-  ['Kalki 2898 AD', 'An armored man stands in a desert below an enormous floating city.'],
-  ['Hanu-Man', 'A man holds a glowing red gem below the silhouette of Hanuman.'],
-  ['Sita Ramam', 'An army officer holds a handwritten letter against a snowy mountain landscape.'],
-];
 
 export const spoken = [
   ['Rangasthalam', 'In a village by the Godavari, a mechanic who struggles to hear takes on a powerful village president.'],
@@ -199,7 +187,20 @@ function photoSets() {
 }
 
 export function starterSets() {
-  return [...photoSets(), ...songSets(), ...regularSets()];
+  return [...photoSets(), ...frameSets(), ...songSets(), ...regularSets()];
+}
+
+function frameSets() {
+  return frameLevels.map((level, index) => ({
+    id: `starter-frame-${String(index + 1).padStart(2, '0')}`, industry: 'tollywood', mode: 'frame', title: `Level ${index + 1}`, starter: true,
+    questions: level.map(frame => {
+      const options = shuffle([frame.movie, ...shuffle(level.map(other => other.movie).filter(movie => movie !== frame.movie)).slice(0, 3)]);
+      return {
+        media: `/media/frames/${frame.file}`, alt: 'Two frames from one scene of a Telugu film. The movie is revealed after you answer.',
+        details: { movie: frame.movie, dialogue: frame.dialogue }, aliases: frame.aliases, options, correct: options.indexOf(frame.movie),
+      };
+    }),
+  }));
 }
 
 function songSets() {
@@ -219,7 +220,6 @@ function songSets() {
 
 function regularSets() {
   return [
-    ['frame', 'Scenes of Tollywood', frames, (_, i) => ({ media: `/media/frame-${i + 1}.webp` })],
     ['lyric', 'Tollywood Hooks', lyrics, text => ({ text })],
     ['emoji', 'Tollywood in Emojis', emojis, text => ({ text })],
     ['plot', 'Plot Summaries Gone Wrong', plots, text => ({ text })],

@@ -187,7 +187,7 @@ function home(data) {
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <h1 id="hero-title">The ${esc(industry.name)}<br>movie quiz.</h1>
-        <p>Name actors from a blurred photo and songs from five seconds of audio. Ten questions a level.</p>
+        <p>Name actors from a blurred photo, movies from film frames, and songs from five seconds of audio. Ten questions a level.</p>
         <a class="btn primary" href="#games">Choose a game ${icon('arrow', 18)}</a>
       </div>
     </section>
@@ -204,7 +204,7 @@ function home(data) {
       <h2 id="how-title">How to play</h2>
       <div class="steps">
         <div>${icon('film', 20)}<div><strong>Pick a game</strong><p>Each level has ten questions.</p></div></div>
-        <div>${icon('play', 20)}<div><strong>Type it, or pass</strong><p>Name the actor or actress from the photo. Close spellings count. For songs, reveal the answer and score yourself.</p></div></div>
+        <div>${icon('play', 20)}<div><strong>Type it, or pass</strong><p>Name the actor, actress or movie. Close spellings count. For songs, reveal the answer and score yourself.</p></div></div>
         <div>${icon('lock', 20)}<div><strong>Unlock the next level</strong><p>Finish a level to open the next one.</p></div></div>
       </div>
     </section>
@@ -231,6 +231,9 @@ function showRound(round) {
   const reveal = round.answerFormat === 'reveal';
   const song = reveal && mode.clue === 'audio';
   const photoGuess = reveal && !song && Boolean(mode.typedGuess);
+  const scene = photoGuess && Boolean(mode.scene);
+  const word = mode.answerWord ?? 'name';
+  const seconds = mode.seconds ?? photoSeconds;
   clearInterval(revealTimer);
   const back = lobbyURL(round.industry);
   document.title = `${mode.name} | Movie Games Adda`;
@@ -240,7 +243,7 @@ function showRound(round) {
         <p class="subtle">${esc(mode.name)}${round.level ? ` · Level ${round.level}` : ''}${reveal ? '' : typed ? ' · Typed answers' : ' · Multiple choice'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
         <div class="score">${round.score}<span> / 10</span></div>
-        <p>${reveal ? (photoGuess ? `You named ${round.score} of 10.` : `You recognised ${round.score} of 10.`) : `You got ${round.score} of 10 correct.`}</p>
+        <p>${reveal ? (photoGuess ? `You named ${round.score} of 10${mode.scene ? ' movies' : ''}.` : `You recognised ${round.score} of 10.`) : `You got ${round.score} of 10 correct.`}</p>
         <div class="result-actions">${mode.levels
           ? `<button type="button" class="btn primary" id="${round.nextLevel ? 'next-level' : 'all-levels'}">${round.nextLevel ? `Continue to Level ${round.nextLevel} ${icon('arrow', 18)}` : 'All levels'}</button>`
           : `<button type="button" class="btn primary" id="replay">${icon('repeat', 19)} Play again</button>`}<a class="btn secondary" href="${back}">Choose a game</a></div>${mode.levels && round.nextLevel ? `<p class="unlock-note">${icon('check', 16)} Level ${round.nextLevel} unlocked.</p>` : ''}
@@ -254,7 +257,7 @@ function showRound(round) {
     return;
   }
   const { question, feedback, position } = round;
-  const prompt = round.starter && round.mode === 'frame' ? 'Which movie inspired this scene?' : mode.prompt;
+  const prompt = mode.prompt;
   const clueRenderers = {
     image: () => `<figure class="clue clue-frame"><img src="${esc(question.media)}" alt="${esc(question.alt)}">${question.text ? `<figcaption>${esc(question.text)}</figcaption>` : ''}</figure>`,
     audio: () => `<div class="clue clue-audio">${cardArt('audio')}<audio aria-label="Movie audio clue" controls preload="none" src="${esc(question.media)}"></audio><details><summary>Read the audio clue</summary><p>${esc(question.alt)}</p></details></div>`,
@@ -273,9 +276,10 @@ function showRound(round) {
         <dl>${row('Music', d.composer)}${row('Singers', d.singers)}${row('Lyrics', d.lyricist)}</dl>
         ${d.note ? `<p class="song-note">${esc(d.note)}</p>` : ''}
       </div></div>`;
-  const clue = song ? songClue() : reveal
+  const sceneClue = () => `<figure class="clue clue-scene"><img src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Two frames from one scene of a Telugu film'}" draggable="false">${revealed ? '' : `<div class="photo-timer" aria-live="off"><span id="count">${seconds}</span></div>`}</figure>${revealed ? `<div class="scene-card"><h2>${esc(question.name)}</h2>${d.dialogue ? `<p class="scene-label">The dialogue</p><blockquote>${esc(d.dialogue)}</blockquote>` : ''}</div>` : ''}`;
+  const clue = song ? songClue() : scene ? sceneClue() : reveal
     ? `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Blurred photo'}" draggable="false">
-        ${revealed ? '' : `<div class="photo-timer" aria-live="off"><span id="count">${photoSeconds}</span></div>`}
+        ${revealed ? '' : `<div class="photo-timer" aria-live="off"><span id="count">${seconds}</span></div>`}
         <figcaption id="reveal-name" ${revealed ? '' : 'hidden'}>${esc(question.name)}</figcaption></figure>`
     : (clueRenderers[mode.clue ?? round.mode] ?? clueRenderers.text)();
   const options = question.options?.map((option, index) => {
@@ -287,7 +291,7 @@ function showRound(round) {
     ? `<p class="submitted-guess">${photoGuess ? (feedback.passed ? '<strong>You passed</strong>' : `<strong>You typed</strong> ${esc(feedback.guess)}`) : `<strong>You said</strong> ${feedback.correct ? 'I guessed it' : 'I didn’t'}`}</p>`
     : photoGuess ? `<form class="guess-form" id="guess-form" novalidate>
         <label class="sr-only" for="guess">Your answer</label>
-        <div class="guess-row"><input id="guess" name="guess" type="text" maxlength="120" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Type the name"><button class="btn primary" type="submit">Submit</button></div>
+        <div class="guess-row"><input id="guess" name="guess" type="text" maxlength="120" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Type the ${word} name"><button class="btn primary" type="submit">Submit</button></div>
         <button type="button" class="btn secondary guess-pass" id="guess-pass">Pass</button>
       </form>`
     : `<div class="reveal-actions" id="reveal-actions" hidden><button type="button" class="btn guess-yes" data-self="0">${icon('check', 20)} Yes, I guessed</button><button type="button" class="btn guess-no" data-self="1">${icon('close', 20)} No, I didn’t</button></div>
@@ -298,7 +302,7 @@ function showRound(round) {
     : `<div class="options">${options}</div>`;
   main.innerHTML = `<div class="shell play-shell">
     <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>${reveal && !song ? `<button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="${sound.isMuted()}">${icon(sound.isMuted() ? 'mute' : 'volume', 18)}<span>${sound.isMuted() ? 'Sound off' : 'Sound on'}</span></button>` : ''}</div>
-    <section class="panel quiz${photoGuess ? ' typed-photo' : ''}" aria-labelledby="question-title">
+    <section class="panel quiz${photoGuess && !scene ? ' typed-photo' : ''}${scene ? ' typed-scene' : ''}" aria-labelledby="question-title">
       <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
       ${clue}
@@ -360,10 +364,10 @@ function showRound(round) {
     clearInterval(revealTimer);
     sound.stop();
     sound.play('appear');
-    sound.tick(photoSeconds);
+    sound.tick(seconds);
     const photo = main.querySelector('#photo');
     const count = main.querySelector('#count');
-    let left = photoSeconds;
+    let left = seconds;
     // Typed games keep the photo blurred and the name hidden until an answer (or Pass) is in.
     const clearPhoto = () => {
       clearInterval(revealTimer);
@@ -415,7 +419,7 @@ function showRound(round) {
     guessForm.addEventListener('submit', event => {
       event.preventDefault();
       const value = guessForm.elements.guess.value.trim();
-      if (!/[\p{L}\p{N}]/u.test(value)) { status('Type a name, or press Pass.', true); guessForm.elements.guess.focus(); return; }
+      if (!/[\p{L}\p{N}]/u.test(value)) { status(`Type the ${word} name, or press Pass.`, true); guessForm.elements.guess.focus(); return; }
       send({ guess: value });
     });
     main.querySelector('#guess-pass').addEventListener('click', () => send({ pass: true }));

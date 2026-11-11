@@ -97,8 +97,8 @@ const slack = length => (length <= 3 ? 0 : length <= 6 ? 1 : length <= 9 ? 2 : 3
 const words = value => value.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
 // How well the guess fits one person: smaller is better, null means not at all.
-function fit(guess, person) {
-  const forms = [person.name, ...(nameAliases[person.name] ?? [])];
+function fit(guess, person, extra = {}) {
+  const forms = [person.name, ...(nameAliases[person.name] ?? []), ...(extra[person.name] ?? [])];
   const g = key(guess);
   if (!g) return null;
   let best = null;
@@ -132,9 +132,9 @@ function fit(guess, person) {
 }
 
 // Is the guess the right person, judged against everyone in the same level?
-export function guessIsCorrect(guess, answer, everyone) {
+export function guessIsCorrect(guess, answer, everyone, extra = {}) {
   const people = [...new Set([answer, ...everyone])].map(name => ({ name }));
-  const scores = people.map(person => ({ name: person.name, score: fit(guess, person) })).filter(item => item.score !== null);
+  const scores = people.map(person => ({ name: person.name, score: fit(guess, person, extra) })).filter(item => item.score !== null);
   if (!scores.length) return false;
   const lowest = Math.min(...scores.map(item => item.score));
   const leaders = scores.filter(item => item.score === lowest);

@@ -168,7 +168,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
       const alt = field(question.alt, 350);
       const media = field(question.media, 2000);
       const rawDetails = question.details && typeof question.details === 'object' ? question.details : null;
-      const details = rawDetails ? Object.fromEntries(['movie', 'year', 'composer', 'singers', 'lyricist', 'note']
+      const details = rawDetails ? Object.fromEntries(['movie', 'year', 'composer', 'singers', 'lyricist', 'note', 'dialogue']
         .map(key => [key, field(rawDetails[key], 350)]).filter(([, value]) => value)) : undefined;
       let fingerprint;
       const clue = modes[mode].clue;
@@ -181,7 +181,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
           need(asset && allowed.has(asset.type), 400, `${label} needs a valid ${clue} upload.`);
           fingerprint = upload[1];
         } else {
-          need(starter && /^\/media\/((frame|meme)-\d+\.webp|(hero|heroine)-\d+\.jpg|song-\d+\.mp3|audio-\d+\.mp3)$/.test(media), 400, `${label} needs a valid upload.`);
+          need(starter && /^\/media\/((frame|meme)-\d+\.webp|frames\/f-\d+\.jpg|(hero|heroine)-\d+\.jpg|song-\d+\.mp3|audio-\d+\.mp3)$/.test(media), 400, `${label} needs a valid upload.`);
           fingerprint = hash(readFileSync(resolve(publicDir, '.' + media)));
         }
       } else {
@@ -209,6 +209,8 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     return id;
   }
   if (seed) transaction(() => {
+    // The illustrated one-set frame game was replaced by the film-still levels.
+    run("UPDATE sets SET status = 'archived' WHERE id = 'starter-frame' AND status = 'live'");
     for (const set of starterSets()) {
       const id = set.id ?? `starter-${set.mode}`;
       if (!query('SELECT id FROM sets WHERE id = ?', id)) insertSet(set, 'live', true, id);
@@ -366,8 +368,10 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
               else {
                 const guess = field(rawGuess, 120);
                 need(/[\p{L}\p{N}]/u.test(guess), 400, 'Type a name, or pass.');
-                const everyone = JSON.parse(round.questions).map(item => item.options[item.correct]);
-                answers.push({ guess, correct: guessIsCorrect(guess, question.options[question.correct], everyone) });
+                const all = JSON.parse(round.questions);
+                const everyone = all.map(item => item.options[item.correct]);
+                const alternates = Object.fromEntries(all.map(item => [item.options[item.correct], item.aliases ?? []]));
+                answers.push({ guess, correct: guessIsCorrect(guess, question.options[question.correct], everyone, alternates) });
               }
             } else if (round.answer_format === 'reveal') {
               need(picked === 0 || picked === 1, 400, 'Choose Yes or No.');

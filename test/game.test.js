@@ -52,7 +52,7 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
   const catalog = await player('/api/catalog');
   assert.deepEqual(catalog.industries, [{ id: 'tollywood', name: 'Tollywood' }]);
   assert.deepEqual(catalog.counts.map(count => count.mode).sort(), ['emoji', 'frame', 'hero', 'heroine', 'lyric', 'meme', 'plot', 'song']);
-  assert(catalog.counts.every(count => count.live === ({ hero: 3, heroine: 3, song: 9 }[count.mode] ?? 1)));
+  assert(catalog.counts.every(count => count.live === ({ hero: 3, heroine: 3, song: 9, frame: 24 }[count.mode] ?? 1)));
   const start = { industry: 'tollywood', mode: 'emoji' };
   let round = await player('/api/rounds', start, 201);
   const path = `/api/rounds/${round.id}`;
@@ -206,9 +206,39 @@ test('games marked coming soon cannot be started and the audio game is gone', as
   const post = (mode) => fetch(`http://127.0.0.1:${server.address().port}/api/rounds`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ industry: 'tollywood', mode }),
   });
-  for (const mode of ['frame', 'lyric', 'emoji', 'plot', 'meme']) assert.equal((await post(mode)).status, 409, mode);
+  for (const mode of ['lyric', 'emoji', 'plot', 'meme']) assert.equal((await post(mode)).status, 409, mode);
   assert.equal((await post('audio')).status, 400);
   assert.equal((await post('hero')).status, 201);
+  assert.equal((await post('frame')).status, 201);
+});
+
+test('Guess the Movie: 24 levels of ten distinct movies, typed answers with alternate names, dialogue only after answering', async t => {
+  const { client } = await fixture(t);
+  const player = client();
+  const sets = starterSets().filter(item => item.mode === 'frame');
+  assert.equal(sets.length, 24);
+  for (const level of sets) {
+    assert.equal(new Set(level.questions.map(q => q.options[q.correct])).size, 10);
+    assert(level.questions.every(q => q.details.dialogue && !q.media.includes('black')));
+  }
+  const byMedia = new Map(sets.flatMap(item => item.questions.map(q => [q.media, q])));
+  assert.equal(byMedia.size, 240, 'every frame is used once');
+  let round = await player('/api/rounds', { industry: 'tollywood', mode: 'frame' }, 201);
+  assert.equal(round.level, 1);
+  assert.equal(round.nextLevel, 2);
+  for (let i = 0; i < 10; i++) {
+    const known = byMedia.get(round.question.media);
+    const movie = known.options[known.correct];
+    assert.equal(round.question.name, undefined);
+    assert.ok(!JSON.stringify(round).includes(movie) && !JSON.stringify(round).includes(known.details.dialogue), 'answer and dialogue stay hidden');
+    const send = body => player(`/api/rounds/${round.id}/answer`, { questionId: round.question.id, ...body });
+    round = await send(i === 0 ? { pass: true } : i === 1 ? { guess: 'Zzyzx Qwerty' } : i === 2 && known.aliases[0] ? { guess: known.aliases[0].toLowerCase() } : { guess: movie.toUpperCase() });
+    assert.equal(round.feedback.correct, i >= 2);
+    assert.equal(round.question.name, movie);
+    assert.equal(round.question.details.dialogue, known.details.dialogue, 'the dialogue is shown once answered');
+    round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
+  }
+  assert.equal(round.score, 8);
 });
 
 test('hero and heroine rounds are typed levels: forgiving spelling, pass, and names stay hidden until answered', async t => {

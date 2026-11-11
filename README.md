@@ -1,6 +1,6 @@
 # Movie Games Adda
 
-A black-and-red film quiz for phones and laptops. The Tollywood launch has one ten-question set each for Frames, Lyrics, Emojis, Badly Explained Plot, and Guess the Meme as coming soon, plus live Guess the Actor, Guess the Actress and Guess the Song games with ten-question levels. Players choose multiple choice or typed answers when starting a round.
+A black-and-red film quiz for phones and laptops. The Tollywood launch has one ten-question set each for Frames, Lyrics, Emojis, Badly Explained Plot, and Guess the Meme as coming soon, plus live Guess the Actor, Guess the Actress, Guess the Movie (one film frame, typed answer) and Guess the Song games with ten-question levels. Players choose multiple choice or typed answers when starting a round.
 
 ## Run locally
 
@@ -30,3 +30,7 @@ The starter frame and meme images are illustrated recreations, the starter audio
 Run the Node process behind HTTPS and point the intended domain at the host. Set `HOST=0.0.0.0`, `PORT`, `ADMIN_PASSWORD`, and `COOKIE_SECURE=1`. Set `DATA_DIR` to a persistent volume for the SQLite database, which stores sets, uploads, and play history. Back up that database before migrating or replacing the host.
 
 Run `npm test` to verify round progress, scoring, publishing, duplicate checks, and industry isolation.
+
+## Guess the Movie by Frames levels
+
+The 24 levels come from `images_with_dialogues/` (collages of two to six frames from one scene, with the dialogue). Run `python3 tools/build-frames.py` (needs Pillow and NumPy) to rebuild them: it keeps only clearly visible collages (no black bars at the edges or between frames, nothing too dark or flat), skips template and promo posts, puts ten different movies in each level, resizes the stills into `public/media/frames/`, and writes `frames-data.js`. Movie names and alternate spellings live in the script's `M` table. Players type the movie name against a 20-second timer, the same typed, forgiving-spelling answers and Pass button as Guess the Actor. After they answer, the movie name and the scene's dialogue are shown.

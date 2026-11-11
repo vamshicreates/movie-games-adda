@@ -9,3 +9,8 @@
 /.preview/
 /Songs/
 *cookies*
+/images_with_dialogues/
+/meme_templates/
+/download_progress.log
+/downloader_state.json
+/download_all_tka.py

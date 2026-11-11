@@ -107,10 +107,11 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
 .card-visual { position: relative; isolation: isolate; display: grid; place-items: center; aspect-ratio: 16 / 9; overflow: hidden; background: #1b1416; color: var(--red-ink); }
 .card-art { width: min(100%, 240px); height: 100%; }
 /* Actor and Actress cards use a 16:9 cover: three lightly blurred faces and the game name. */
-.game-hero .card-visual, .game-heroine .card-visual { background-size: cover; background-position: center; }
+.game-hero .card-visual, .game-heroine .card-visual, .game-frame .card-visual { background-size: cover; background-position: center; }
 .game-hero .card-visual { background-image: url('/covers/actor.jpg'); }
 .game-heroine .card-visual { background-image: url('/covers/actress.jpg'); }
-.game-hero .card-art, .game-heroine .card-art { display: none; }
+.game-frame .card-visual { background-image: url('/covers/frame.jpg'); }
+.game-hero .card-art, .game-heroine .card-art, .game-frame .card-art { display: none; }
 .card-body { display: flex; flex-direction: column; flex: 1; padding: 20px 20px 12px; }
 .card-body h3 { font-size: 1.25rem; letter-spacing: -.01em; }
 .card-body p { flex: 1; font-size: .9375rem; line-height: 1.45; color: var(--text-2); margin: 8px 0 20px; }
@@ -206,6 +207,7 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
 }
 .clue-photo.is-revealed::before { opacity: 0; }
 .photo-timer { position: absolute; z-index: 2; left: 50%; bottom: 24px; translate: -50% 0; min-width: 48px; height: 48px; padding-inline: 12px; border-radius: 24px; display: grid; place-items: center; background: rgb(16 12 13 / .72); box-shadow: 0 0 0 1px rgb(243 236 232 / .22); font-weight: 600; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.clue-scene .photo-timer { left: auto; right: 12px; top: 12px; bottom: auto; translate: none; }
 .clue-photo figcaption { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 56px 16px 20px; text-align: center; font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; background: linear-gradient(transparent, rgb(16 12 13 / .94)); }
 .clue-photo figcaption[hidden] { display: none; }
 .reveal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
@@ -230,6 +232,15 @@ nav { display: flex; align-items: center; gap: clamp(8px, 2vw, 24px); }
 .guess-row .btn { min-height: 52px; padding-inline: 24px; }
 .guess-pass { min-height: 44px; }
 .typed-photo .clue-photo { height: clamp(300px, calc(100vh - 380px), 560px); height: clamp(300px, calc(100dvh - 380px), 560px); }
+
+/* Guess the Movie: the frame stays sharp; the movie and its dialogue appear once answered. */
+.clue-scene { position: relative; display: grid; place-items: center; min-height: 0; overflow: hidden; background: #0b0809; }
+.clue-scene img { display: block; width: 100%; height: auto; max-height: clamp(220px, 52vh, 520px); max-height: clamp(220px, 52dvh, 520px); object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.typed-scene .clue-scene img { max-height: clamp(200px, calc(100dvh - 330px), 520px); }
+.scene-card { margin-top: 14px; padding: 16px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline); }
+.scene-card h2 { margin: 0 0 10px; font-size: clamp(1.25rem, 4.5vw, 1.625rem); letter-spacing: -.02em; line-height: 1.2; }
+.scene-label { margin: 0 0 4px; color: var(--muted); font-size: .8125rem; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.scene-card blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--red-ink); color: var(--text-2); font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; }
 
 /* Results: the score is the page */
 .results { text-align: center; padding-top: 24px; }
@@ -395,6 +406,8 @@ input[type="file"] { padding: 8px; }
   .guess-row .btn { padding-inline: 18px; }
   .guess-pass { min-height: 40px; }
   .typed-photo .clue-photo { height: clamp(120px, calc(100vh - 286px), 520px); height: clamp(120px, calc(100dvh - 286px), 520px); }
+  .typed-scene .clue-scene img { max-height: clamp(150px, calc(100dvh - 290px), 480px); }
+  .scene-card { margin-top: 10px; padding: 12px 14px; }
   .editor-meta { grid-template-columns: 1fr; }
   .set-list li { align-items: start; }
   .set-actions { min-width: 104px; }
