@@ -191,6 +191,7 @@ function home(data) {
         <a class="btn primary" href="#games">Choose a game ${icon('arrow', 18)}</a>
       </div>
     </section>
+    <a class="daily-strip" href="/play"><span class="daily-strip-icon">${icon('frame', 22)}</span><span class="daily-strip-copy"><strong>New: daily Telugu movie games</strong><span>Frame of the Day, Dialogue of the Day and Clue Tiles. A fresh puzzle every day.</span></span><span class="daily-strip-go">Play today ${icon('arrow', 16)}</span></a>
     <section id="games" class="games-section" aria-labelledby="games-title">
       <div class="section-top">
         <div><h2 id="games-title">Choose a game</h2><p>${Object.values(modes).filter(item => !item.soon).length} games to play now, ${Object.values(modes).filter(item => item.soon).length} more coming soon.</p></div>

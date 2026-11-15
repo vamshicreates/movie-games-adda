@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { answerFormats, modes } from './public/modes.js';
 import { shuffle, starterAliases, starterSets } from './seed.js';
 import { guessIsCorrect } from './names.js';
+import { createDaily } from './daily.js';
+import { originOf, render as renderSite } from './site.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(root, 'public');
@@ -14,7 +16,7 @@ const imageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const audioTypes = new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']);
 const types = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.woff2': 'font/woff2',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.woff2': 'font/woff2', '.png': 'image/png',
 };
 const maxUpload = 8 * 1024 * 1024;
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -98,7 +100,7 @@ function bytesResponse(req, res, { type, length, stream, cache }) {
   stream(start, end);
 }
 
-export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, enforceSoon = true } = {}) {
+export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, enforceSoon = true, clock = Date.now } = {}) {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec(`
@@ -294,9 +296,12 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     return { ...header, question, feedback };
   }
 
+  const daily = createDaily({ db, readJson, RequestError, json });
+
   async function api(req, res, path) {
     const get = req.method === 'GET';
     const post = req.method === 'POST';
+    if (path.startsWith('/api/daily/') && (await daily.api(req, res, path, clock())) !== false) return;
     if (get && path === '/api/catalog') return json(res, catalog(player(req, res)));
     if (post && path === '/api/rounds') {
       let { industry, mode, answerFormat = 'multiple', level } = await readJson(req);
@@ -426,6 +431,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
         setCookie(req, res, 'mga_admin', '', 0);
         return json(res, { ok: true });
       }
+      if (get && path === '/api/admin/suggestions') return json(res, { suggestions: daily.suggestions() });
       if (get && path === '/api/admin/library') return json(res, {
         industries: rows('SELECT * FROM industries ORDER BY name'),
         sets: rows('SELECT id, industry, mode, title, status, starter FROM sets ORDER BY created DESC, title'),
@@ -495,6 +501,12 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
         return await api(req, res, path);
       }
       need(req.method === 'GET' || req.method === 'HEAD', 405, 'This action is not available.');
+      need(!path.startsWith('/media/daily/'), 404, 'This page was not found.'); // daily frames are served through the API so file names cannot give the answer away
+      const served = renderSite(path, originOf(req), clock());
+      if (served) {
+        res.writeHead(200, { 'Content-Type': served.type, 'Cache-Control': 'no-cache', 'Content-Length': Buffer.byteLength(served.body) });
+        return res.end(req.method === 'HEAD' ? undefined : served.body);
+      }
       const upload = /^\/uploads\/([a-f0-9]{64})$/.exec(path);
       if (upload) {
         const asset = query('SELECT type, bytes FROM media WHERE id = ?', upload[1]);
