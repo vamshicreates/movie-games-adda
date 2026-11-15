@@ -182,16 +182,15 @@ function home(data) {
     </article>`;
   }).join('');
   const soonItems = soonModes.map(([id, mode]) => `<article class="soon-item">${icon(id, 20)}<h4>${esc(mode.name)}</h4><p>${esc(mode.desc)}</p></article>`).join('');
-  document.title = `Movie Games Adda | The ${industry.name} movie quiz`;
+  document.title = 'Movie Games Adda | Daily Telugu movie games';
   main.innerHTML = `<div class="shell home">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <h1 id="hero-title">The ${esc(industry.name)}<br>movie quiz.</h1>
-        <p>Name actors from a blurred photo, movies from film frames, and songs from five seconds of audio. Ten questions a level.</p>
-        <a class="btn primary" href="#games">Choose a game ${icon('arrow', 18)}</a>
+        <h1 id="hero-title">Daily Telugu<br>movie games.</h1>
+        <p>Frame of the Day, Dialogue of the Day and Clue Tiles. A fresh puzzle every day, the same for everyone. Guess it, share your grid, keep your streak.</p>
+        <div class="hero-actions"><a class="btn primary" href="/play">Play today ${icon('arrow', 18)}</a><a class="btn secondary" href="#games">More games</a></div>
       </div>
     </section>
-    <a class="daily-strip" href="/play"><span class="daily-strip-icon">${icon('frame', 22)}</span><span class="daily-strip-copy"><strong>New: daily Telugu movie games</strong><span>Frame of the Day, Dialogue of the Day and Clue Tiles. A fresh puzzle every day.</span></span><span class="daily-strip-go">Play today ${icon('arrow', 16)}</span></a>
     <section id="games" class="games-section" aria-labelledby="games-title">
       <div class="section-top">
         <div><h2 id="games-title">Choose a game</h2><p>${Object.values(modes).filter(item => !item.soon).length} games to play now, ${Object.values(modes).filter(item => item.soon).length} more coming soon.</p></div>

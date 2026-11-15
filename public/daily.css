@@ -185,3 +185,6 @@
 .daily-strip-copy span { color: var(--text-2); font-size: .9375rem; }
 .daily-strip-go { display: inline-flex; align-items: center; gap: 6px; color: var(--red-ink); font-weight: 600; white-space: nowrap; }
 @media (max-width: 640px) { .daily-strip { flex-wrap: wrap; } .daily-strip-copy { flex-basis: calc(100% - 64px); } .daily-strip-go { margin-left: 60px; } }
+
+.hero .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.hero .hero-actions .btn { margin-top: 0; }
