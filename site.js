@@ -1,4 +1,4 @@
-// Server-rendered pages: per-game SEO tags for the daily games, the information pages, robots.txt and sitemap.xml.
+// Server-rendered pages: SEO tags for the daily quiz, the information pages, robots.txt and sitemap.xml.
 // Everything is plain HTML with no inline script, because the site's content security policy forbids it.
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -20,13 +20,9 @@ export function originOf(req) {
   return `${proto}://${safe}`;
 }
 
-const gameCopy = {
-  '/play': ['Daily Telugu Movie Games: Guess the Film, Dialogue and Clues', 'Three free daily Telugu movie games: guess the film from frames, name it from a dialogue, or crack the clue tiles. A new puzzle every day, no login.', 'Daily Telugu movie games', 'Three new Tollywood puzzles every day. Guess the film from a frame, from a dialogue, or from clue tiles. Free, no login, and your streak stays in your browser.'],
-  '/play/frame': ['Daily Telugu Movie Frame Game: Guess the Tollywood Film', 'Guess today\'s Telugu movie from a single frame. You get six tries and a new clue after every miss. A fresh Tollywood film every day, free, no login.', 'Frame of the Day', 'Guess today\'s Telugu film from one still. Every wrong guess unlocks another frame or clue. Six tries.'],
-  '/play/dialogue': ['Daily Telugu Dialogue Game: Guess the Movie from the Line', 'Read a famous Telugu dialogue and name the movie. Six guesses, extra lines and hints after each miss. A new Tollywood dialogue puzzle every day.', 'Dialogue of the Day', 'Read a dialogue and name the Telugu film it came from. Six tries, with another line or hint after every miss.'],
-  '/play/clues': ['Telugu Movie Clue Tiles: Guess the Film from Hero, Director and Year', 'Guess a Telugu movie and see which of its hero, director, music director, year, genre and language match the secret film. Ten guesses, new puzzle daily.', 'Clue Tiles', 'Guess any Telugu film and the tiles show what it shares with the secret one: hero, director, music, year, genre, language. Ten tries.'],
-};
-const playPath = /^\/play(?:\/(frame|dialogue|clues)(?:\/(\d{1,4}))?)?$/;
+const playCopy = ['Daily Telugu Movie Quiz: Guess the Film from a Frame or Dialogue', 'A free daily Telugu movie quiz: ten questions, alternating a film frame and a famous dialogue. Type the film name, get a clue after every miss, share your score. New every day, no login.', 'Daily Telugu movie games', 'Ten questions a day, a frame then a dialogue, all from Telugu films. Type the film name. Free, no login, and your streak stays in your browser.'];
+const playPath = /^\/play(?:\/(\d{1,4}))?$/;
+const legacyPlay = /^\/play\/(?:frame|dialogue|clues)(?:\/(\d{1,4}))?$/; // the three separate games were merged into one daily quiz
 
 export function head({ title, desc, path, origin, robots = 'index,follow' }) {
   const full = title.includes(SITE) ? title : `${title} | ${SITE}`;
@@ -99,33 +95,33 @@ ${body}
 
 // ----- the information pages -----
 const faq = [
-  ['What is Movie Games Adda?', 'A free Telugu movie quiz site. Besides the level-based games on the home page, it has three daily puzzles that everyone plays at the same time: Frame of the Day, Dialogue of the Day and Clue Tiles.'],
-  ['When does the daily puzzle change?', 'At midnight India time (IST). Every player sees the same film on the same day, so you can compare results with friends.'],
-  ['How many guesses do I get?', 'Frame of the Day and Dialogue of the Day give you six guesses. Clue Tiles gives you ten. After every wrong guess you get another frame, line or hint.'],
-  ['Can I type the movie name in Telugu?', 'Yes. Type in English or in Telugu script, or pick a film from the list. Use the language switch to show film names in English or Telugu. Common spelling variations such as “Bahubali” or “Aravinda Sametha” are accepted.'],
-  ['How do streaks work?', 'Your streak counts days in a row that you solve the day\'s puzzle on that same day. Playing the archive does not add to the streak, but those results do count in your stats.'],
-  ['Do I need an account?', 'No. Your results, streaks and stats are saved in your own browser. Clearing the browser data or switching device starts you fresh.'],
-  ['How do I share my result?', 'When you finish, tap Copy result or share straight to WhatsApp or X. The result is a small grid of emoji squares that does not reveal the answer. Challenge a friend sends a link to the same puzzle with your score.'],
-  ['A film I love is missing. Can I suggest it?', 'Yes. Use the Suggest a film button on any daily page. Suggestions are read by hand and we add films when we have clear frames for them.'],
+  ['What is Movie Games Adda?', 'A free Telugu movie quiz site. Besides the level-based games on the home page, it has one daily quiz that everyone plays at the same time: ten questions, alternating a film frame and a dialogue.'],
+  ['When does the daily quiz change?', 'At midnight India time (IST). Every player gets the same ten films on the same day, so you can compare scores with friends.'],
+  ['How many guesses do I get?', 'Three on every question. After a wrong guess you get another frame, another line or a hint such as the genre or the initials of the hero. You can also skip a question, which uses a guess.'],
+  ['Can I type the movie name in Telugu?', 'Yes. Type in English or in Telugu script, or pick a film from the suggestions. Use the language switch to show film names in English or Telugu. Common spelling variations such as “Bahubali” or “Aravinda Sametha” are accepted.'],
+  ['How do streaks work?', 'Your streak counts days in a row that you finish all ten questions on the day they come out. Playing the archive does not add to the streak, but those scores do count in your stats.'],
+  ['Do I need an account?', 'No. Your scores, streaks and stats are saved in your own browser. Clearing the browser data or switching device starts you fresh.'],
+  ['How do I share my result?', 'When you finish, tap Copy result or share straight to WhatsApp or X. The result is a small grid of coloured squares that does not reveal any answer. Challenge a friend sends a link to the same day with your score.'],
+  ['A film I love is missing. Can I suggest it?', 'Yes. Use the Suggest a film button on the daily page. Suggestions are read by hand and we add films when we have clear frames for them.'],
 ];
 
 const pages = {
   '/how-to-play': {
-    title: 'How to Play the Daily Telugu Movie Games', current: 'how',
-    desc: 'How to play Frame of the Day, Dialogue of the Day and Clue Tiles: guesses, hints, streaks, sharing and the archive, with answers to common questions.',
+    title: 'How to Play the Daily Telugu Movie Quiz', current: 'how',
+    desc: 'How to play the daily Telugu movie quiz: ten questions, frames and dialogues, three guesses each, hints, streaks, sharing and the archive, with answers to common questions.',
     body: `<h1>How to play</h1>
-<p class="lede">Three daily Tollywood puzzles. Same film for everyone, new ones at midnight IST.</p>
-<h2>Frame of the Day</h2>
-<p>You see one still from a Telugu film. Type the film name and guess. Every wrong guess unlocks another frame, and once the frames run out, hints such as the genre, the year and the initials of the director and hero. You have six guesses.</p>
-<h2>Dialogue of the Day</h2>
-<p>Read the dialogue and name the film. Wrong guesses unlock more lines and then hints. Six guesses.</p>
-<h2>Clue Tiles</h2>
-<p>Guess any film from the list. Six tiles show how it compares with the secret film: hero, director, music director, year, genre and language. Green is an exact match, yellow is close (a shared genre, or a year within three), and dark means no match. On the year tile an arrow tells you whether the secret film is earlier or later. You have ten guesses, with optional hints after the fifth and eighth.</p>
+<p class="lede">One daily Tollywood quiz. Ten questions, the same for everyone, new ones at midnight IST.</p>
+<h2>The ten questions</h2>
+<p>The questions alternate between a frame and a dialogue, five of each. For a frame you see one still from a Telugu film. For a dialogue you read a line from the film. Either way, type the name of the film. English or Telugu spelling both work, and the suggestions list helps.</p>
+<h2>Guesses and hints</h2>
+<p>You have three guesses on every question. Each wrong guess unlocks a new clue: another frame or another line, and after that hints such as the genre, the year and the initials of the director and hero. Not sure? You can skip a question, but that uses a guess.</p>
+<h2>Your score</h2>
+<p>After each question you see the answer, with the film\'s year, hero, director and music director. At the end you get a score out of 10 and a grid of coloured squares to share: green for a first-guess answer, yellow for a later answer and red for a miss.</p>
 <h2>Streaks, stats and the archive</h2>
-<p>Finish the day\'s puzzle on the same day to keep your streak. The last 30 puzzles stay open in the archive. All of it is saved in your browser, with no login.</p>
+<p>Finish the day\'s ten questions on the same day to keep your streak. The last 30 days stay open in the archive. All of it is saved in your browser, with no login.</p>
 <h2>Frequently asked questions</h2>
 ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
-<p><a class="btn primary" href="/play">Play today\'s puzzles</a></p>`,
+<p><a class="btn primary" href="/play">Play today\'s quiz</a></p>`,
     ld: o => ({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }),
   },
   '/privacy': {
@@ -177,10 +173,11 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
     title: 'Updates and Changelog', desc: 'What is new on Movie Games Adda: the daily Telugu movie games, streaks, sharing, the archive and more.',
     body: `<h1>Updates</h1>
 <p class="lede">What is new on Movie Games Adda.</p>
-<h2>15 November 2026: Daily games</h2>
+<h2>15 November 2026: Daily Telugu movie quiz</h2>
 <ul>
-<li>Frame of the Day, Dialogue of the Day and Clue Tiles, with a new film every day at midnight IST.</li>
-<li>Share your result as an emoji grid, send a challenge link, and keep streaks and stats in your browser.</li>
+<li>One daily quiz of ten questions, alternating a film frame and a dialogue, with new films every day at midnight IST.</li>
+<li>Type the film name, with three guesses and a new clue after every miss.</li>
+<li>Share your score as a grid of coloured squares, send a challenge link, and keep streaks and stats in your browser.</li>
 <li>A 30-day archive, English and Telugu title switch, and a Suggest a film form.</li>
 <li>New How to play, Privacy, Terms, Contact and Credits pages.</li>
 </ul>
@@ -204,11 +201,11 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
   },
 };
 
-const sitemapPaths = ['/', '/play', '/play/frame', '/play/dialogue', '/play/clues', '/how-to-play', '/updates', '/privacy', '/terms', '/credits', '/contact'];
+const sitemapPaths = ['/', '/play', '/how-to-play', '/updates', '/privacy', '/terms', '/credits', '/contact'];
 
 const playTemplate = () => readFileSync(resolve(root, 'public/play.html'), 'utf8');
 
-// Returns { type, body } for a path this module owns, or null.
+// Returns { type, body } (or { redirect }) for a path this module owns, or null.
 export function render(path, origin, now = Date.now()) {
   if (path === '/robots.txt') {
     return { type: 'text/plain; charset=utf-8', body: `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${origin}/sitemap.xml\n` };
@@ -229,12 +226,13 @@ export function render(path, origin, now = Date.now()) {
     const ld = typeof info.ld === 'function' ? info.ld(origin) : info.ld;
     return { type: 'text/html; charset=utf-8', body: page({ ...info, path, origin, ld }) };
   }
+  const old = legacyPlay.exec(path);
+  if (old) return { redirect: old[1] ? `/play/${Number(old[1])}` : '/play' };
   const play = playPath.exec(path);
   if (play) {
-    const [, game, number] = play;
-    const key = game ? `/play/${game}` : '/play';
-    const [title, desc, h1, intro] = gameCopy[key];
-    const archive = number ? `Puzzle #${Number(number)} · ` : '';
+    const number = play[1];
+    const [title, desc, h1, intro] = playCopy;
+    const archive = number ? `Day #${Number(number)} · ` : '';
     const html = playTemplate()
       .replaceAll('%%HEAD%%', head({ title: `${archive}${title}`, desc, path, origin, robots: number ? 'noindex,follow' : 'index,follow' }))
       .replaceAll('%%HEADER%%', header('play'))
@@ -245,4 +243,4 @@ export function render(path, origin, now = Date.now()) {
   }
   return null;
 }
-export const isPlayPath = path => playPath.test(path);
+export const isPlayPath = path => playPath.test(path) || legacyPlay.test(path);

@@ -1,7 +1,7 @@
 // Daily puzzles for Movie Games Adda.
 // Stateless on purpose: the puzzle for a day is a pure function of the IST date, so every visitor gets the
 // same film and nothing has to live on the server (the Vercel deploy re-seeds its database on every cold start).
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,13 +13,13 @@ const mediaDir = resolve(root, 'public/media/daily');
 
 export const EPOCH = '2026-10-16'; // puzzle #1
 export const ARCHIVE_DAYS = 30;
-export const GAMES = ['frame', 'dialogue', 'clues'];
-export const MAX_GUESSES = { frame: 6, dialogue: 6, clues: 10 };
-export const CLUE_HINTS = { 5: 'hero', 8: 'title' }; // optional hints in the clue-tile game, after guess 5 and 8
+export const QUESTIONS = 10; // one daily game: ten questions, alternating frame and dialogue
+export const TRIES = 3; // typed guesses per question
+export const typeOf = q => (q % 2 === 1 ? 'frame' : 'dialogue');
 
 const DAY = 86_400_000;
 const IST_OFFSET = 330 * 60_000;
-const OFFSET = { frame: 0, dialogue: 31, clues: 62 }; // different films on the same day while the list has 95 films
+const SECRET = process.env.DAILY_SECRET ?? 'mga-daily-answer-images';
 
 export const films = [...dailyFilms].sort((a, b) => (a.id < b.id ? -1 : 1));
 const byId = new Map(films.map(film => [film.id, film]));
@@ -51,8 +51,9 @@ function permutation(size) {
   return order;
 }
 const order = permutation(films.length);
-export function filmFor(game, n) {
-  return films[order[(n - 1 + OFFSET[game]) % films.length]];
+// Ten consecutive films from the shuffled list per day, so a day never repeats a film (the list has 95).
+export function filmFor(n, q) {
+  return films[order[((n - 1) * QUESTIONS + (q - 1)) % films.length]];
 }
 
 // ----- clues -----
@@ -71,51 +72,24 @@ export function safeLines(film) {
   const safe = film.lines.filter(line => !names.some(name => squash(line).includes(name)));
   return safe.length ? safe : film.lines.slice(0, 1);
 }
-const frameSrc = (game, n, i) => `/api/daily/frame?g=${game}&n=${n}&i=${i}`;
+const frameSrc = (n, q, i) => `/api/daily/frame?n=${n}&q=${q}&i=${i}`;
+const imageKey = (n, q) => createHmac('sha256', SECRET).update(`${n}:${q}`).digest('hex').slice(0, 16);
 
 // The clue shown after `stage` wrong guesses (stage 0 is the opening clue).
-export function clueAt(game, n, stage) {
-  const film = filmFor(game, n);
-  if (game === 'frame') {
+export function clueAt(n, q, stage) {
+  const film = filmFor(n, q);
+  if (typeOf(q) === 'frame') {
     const frames = film.frames.length;
-    if (stage < frames) return { type: 'frame', src: frameSrc(game, n, stage), label: `Frame ${stage + 1}` };
+    if (stage < frames) return { type: 'frame', src: frameSrc(n, q, stage), label: `Frame ${stage + 1}` };
     const hint = hintList(film)[stage - frames];
     return hint && { type: 'hint', ...hint };
   }
-  if (game === 'dialogue') {
-    const lines = safeLines(film);
-    if (stage < lines.length) return { type: 'line', text: lines[stage], label: stage ? 'Another line' : 'The dialogue' };
-    const hint = hintList(film)[stage - lines.length];
-    return hint && { type: 'hint', ...hint };
-  }
-  return null;
+  const lines = safeLines(film);
+  if (stage < lines.length) return { type: 'line', text: lines[stage], label: stage ? 'Another line' : 'The dialogue' };
+  const hint = hintList(film)[stage - lines.length];
+  return hint && { type: 'hint', ...hint };
 }
-export const openingClue = (game, n) => clueAt(game, n, 0);
-
-export function clueHint(film, guessNo) {
-  if (CLUE_HINTS[guessNo] === 'hero') return { label: 'Hero initials', value: initials(film.hero) };
-  if (CLUE_HINTS[guessNo] === 'title') {
-    const words = film.title.split(/\s+/).length;
-    return { label: 'Title', value: `Starts with “${film.title[0].toUpperCase()}” · ${words} word${words === 1 ? '' : 's'}` };
-  }
-  return null;
-}
-
-// ----- the clue-tile comparison -----
-const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
-export function compareTiles(guess, secret) {
-  const exact = (a, b) => (a.trim().toLowerCase() === b.trim().toLowerCase() ? 'hit' : 'miss');
-  const gap = guess.year - secret.year;
-  const overlap = guess.genres.some(genre => secret.genres.includes(genre));
-  return [
-    { k: 'hero', label: 'Hero', value: guess.hero, state: exact(guess.hero, secret.hero) },
-    { k: 'director', label: 'Director', value: guess.director, state: exact(guess.director, secret.director) },
-    { k: 'music', label: 'Music', value: guess.music, state: exact(guess.music, secret.music) },
-    { k: 'year', label: 'Year', value: String(guess.year), state: gap === 0 ? 'hit' : Math.abs(gap) <= 3 ? 'near' : 'miss', arrow: gap === 0 ? '' : gap < 0 ? 'up' : 'down' },
-    { k: 'genre', label: 'Genre', value: guess.genres.join(' · '), state: sameSet(guess.genres, secret.genres) ? 'hit' : overlap ? 'near' : 'miss' },
-    { k: 'lang', label: 'Language', value: guess.lang, state: exact(guess.lang, secret.lang) },
-  ];
-}
+export const openingClue = (n, q) => clueAt(n, q, 0);
 
 // ----- turning typed text into a film -----
 const plain = value => value.normalize('NFKC').toLowerCase().replace(/[\s‌‍]+/g, ' ').trim();
@@ -135,10 +109,10 @@ export function matchFilm(text) {
 }
 export const filmById = id => byId.get(id);
 
-export function answerFor(game, n) {
-  const film = filmFor(game, n);
+export function answerFor(n, q) {
+  const film = filmFor(n, q);
   return { id: film.id, title: film.title, te: film.te, year: film.year, hero: film.hero, director: film.director, music: film.music,
-    genres: film.genres, lang: film.lang, image: frameSrc(game, n, 0) };
+    genres: film.genres, lang: film.lang, image: `${frameSrc(n, q, 0)}&k=${imageKey(n, q)}` };
 }
 
 // ----- HTTP -----
@@ -151,17 +125,20 @@ export function createDaily({ db, readJson, RequestError, json }) {
   function window(now) {
     return { today: todayNumber(now), from: firstArchive(now) };
   }
-  function puzzleParams(url, now) {
-    const game = url.searchParams.get('game') ?? url.searchParams.get('g');
-    if (!GAMES.includes(game)) fail(400, 'Choose frame, dialogue or clues.');
+  function dayParam(url, now) {
     const { today, from } = window(now);
     const raw = url.searchParams.get('n');
     const n = raw === null ? today : Number(raw);
     if (!Number.isInteger(n) || n < 1) fail(400, 'That puzzle number is not valid.');
     if (n > today) fail(404, 'That puzzle is not out yet.');
     if (n < from) fail(404, 'That puzzle is older than the 30-day archive.');
-    return { game, n, today };
+    return { n, today };
   }
+  const questionOf = value => {
+    const q = Number(value);
+    if (!Number.isInteger(q) || q < 1 || q > QUESTIONS) fail(400, 'That question is not valid.');
+    return q;
+  };
 
   async function api(req, res, path, now = Date.now()) {
     const url = new URL(req.url, 'http://localhost');
@@ -170,19 +147,23 @@ export function createDaily({ db, readJson, RequestError, json }) {
 
     if (get && path === '/api/daily/meta') {
       const { today, from } = window(now);
-      return json(res, { today, date: dateOf(today), from, epoch: EPOCH, games: GAMES, maxGuesses: MAX_GUESSES, hintsAt: Object.keys(CLUE_HINTS).map(Number) });
+      return json(res, { today, date: dateOf(today), from, epoch: EPOCH, questions: QUESTIONS, tries: TRIES });
     }
     if (get && path === '/api/daily/films') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
       return res.end(JSON.stringify(films.map(film => ({ id: film.id, title: film.title, te: film.te, aliases: film.aliases }))));
     }
     if (get && path === '/api/daily/puzzle') {
-      const { game, n, today } = puzzleParams(url, now);
-      return json(res, { game, n, date: dateOf(n), today, isToday: n === today, maxGuesses: MAX_GUESSES[game], clue: openingClue(game, n) });
+      const { n, today } = dayParam(url, now);
+      const questions = Array.from({ length: QUESTIONS }, (_, i) => ({ q: i + 1, type: typeOf(i + 1), clue: openingClue(n, i + 1) }));
+      return json(res, { n, date: dateOf(n), today, isToday: n === today, tries: TRIES, questions });
     }
     if (get && path === '/api/daily/frame') {
-      const { game, n } = puzzleParams(url, now);
-      const film = filmFor(game, n);
+      const { n } = dayParam(url, now);
+      const q = questionOf(url.searchParams.get('q'));
+      // A dialogue question's film still is the answer image, so it needs the key that only a finished question receives.
+      if (typeOf(q) === 'dialogue' && url.searchParams.get('k') !== imageKey(n, q)) fail(404, 'That frame was not found.');
+      const film = filmFor(n, q);
       const i = Number(url.searchParams.get('i') ?? 0);
       if (!Number.isInteger(i) || i < 0 || i >= film.frames.length) fail(404, 'That frame was not found.');
       const file = resolve(mediaDir, film.frames[i]);
@@ -193,30 +174,22 @@ export function createDaily({ db, readJson, RequestError, json }) {
     }
     if (post && path === '/api/daily/guess') {
       const body = await readJson(req);
-      const game = body.game;
-      if (!GAMES.includes(game)) fail(400, 'Choose frame, dialogue or clues.');
       const { today, from } = window(now);
       const n = body.n;
       if (!Number.isInteger(n) || n < from || n > today) fail(400, 'That puzzle is not available.');
-      const max = MAX_GUESSES[game];
+      const q = questionOf(body.q);
       const misses = body.misses;
-      if (!Number.isInteger(misses) || misses < 0 || misses >= max) fail(400, 'That guess count is not valid.');
+      if (!Number.isInteger(misses) || misses < 0 || misses >= TRIES) fail(400, 'That guess count is not valid.');
       const skip = body.skip === true; // "Skip" spends a guess without naming a film
       const guessed = skip ? null : typeof body.film === 'string' ? filmById(body.film) : matchFilm(body.guess);
       if (!skip && !guessed) return json(res, { unknown: true });
-      const secret = filmFor(game, n);
+      const secret = filmFor(n, q);
       const correct = Boolean(guessed) && guessed.id === secret.id;
       const out = { correct, guessed: guessed ? { id: guessed.id, title: guessed.title } : null };
-      if (game === 'clues' && guessed) out.tiles = compareTiles(guessed, secret);
-      if (correct) return json(res, { ...out, answer: answerFor(game, n) });
+      if (correct) return json(res, { ...out, answer: answerFor(n, q) });
       const next = misses + 1;
-      if (next >= max) return json(res, { ...out, over: true, answer: answerFor(game, n) });
-      if (game === 'clues') {
-        const hint = clueHint(secret, next);
-        if (hint) out.hint = hint;
-      } else {
-        out.clue = clueAt(game, n, next);
-      }
+      if (next >= TRIES) return json(res, { ...out, over: true, answer: answerFor(n, q) });
+      out.clue = clueAt(n, q, next);
       return json(res, out);
     }
     if (post && path === '/api/daily/suggest') {

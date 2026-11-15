@@ -38,21 +38,7 @@
 .seg button { min-height: 34px; padding: 2px 12px; border: 0; border-radius: 7px; background: transparent; color: var(--text-2); font-size: .875rem; font-weight: 500; }
 .seg button[aria-pressed="true"] { background: var(--raised-hover); color: var(--text); }
 
-/* Hub */
-.daily-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
-.daily-card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 22px; border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline); transition: box-shadow 150ms var(--ease), transform 150ms var(--ease); }
-.daily-card:hover { box-shadow: 0 0 0 1px var(--hairline-strong); }
-.daily-card:active { transform: scale(.985); }
-.daily-card-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--raised); color: var(--red-ink); }
-.daily-card h2 { font-size: 1.25rem; letter-spacing: -.01em; margin-top: 6px; }
-.daily-card p { color: var(--text-2); font-size: .9375rem; line-height: 1.45; flex: 1; }
-.daily-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: .875rem; }
-.state { padding: 3px 10px; border-radius: 99px; background: var(--raised); color: var(--text-2); font-weight: 500; }
-.state-won { background: #14281e; color: #d5f6e3; }
-.state-lost { background: #321a21; color: #ffdee5; }
-.state-playing { background: #2b2412; color: #f1d68f; }
-.streak { font-weight: 600; }
-.is-done .daily-card-icon { color: var(--green); }
+/* Shared bits */
 .next-line { margin-top: 28px; color: var(--text-2); }
 .next-line time { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .hub-links, .more-games { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
@@ -96,26 +82,6 @@
 .guess-form .status { min-height: 1.4em; }
 .status .link-button, .guess-form .link-button { color: inherit; text-decoration: underline; }
 
-/* Clue tiles */
-.legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 4px; color: var(--text-2); font-size: .875rem; }
-.tile-key { display: inline-block; width: 14px; height: 14px; border-radius: 4px; }
-.arrow-key { color: var(--muted); }
-.hint-box { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline); display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
-.hint-box h2 { width: 100%; font-size: .9375rem; }
-.hint-open { margin: 0; display: flex; gap: 8px; align-items: baseline; }
-.tile-board { display: grid; gap: 16px; padding: 0; margin: 20px 0 0; list-style: none; }
-.guess-name { margin: 0 0 6px; font-weight: 600; }
-.guess-name span { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 6px; border-radius: 6px; background: var(--raised); color: var(--text-2); font-size: .8125rem; }
-.tile-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-height: 66px; padding: 8px 10px; border-radius: 10px; background: #26191c; color: #e9c9d0; }
-.tile.hit, .tile-key.hit { background: var(--green-fill); color: #fff; }
-.tile.near, .tile-key.near { background: var(--amber-fill); color: #fff; }
-.tile.miss, .tile-key.miss { background: #2b1d21; }
-.tile-label { font-size: .6875rem; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
-.tile-value { font-size: .875rem; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; }
-.tile .arrow { position: absolute; right: 8px; top: 6px; font-style: normal; font-size: .9375rem; }
-.skipped { margin: 0; grid-column: 1 / -1; padding: 10px 12px; border-radius: 10px; background: var(--raised); color: var(--muted); }
-
 /* Result */
 .result { margin-top: 24px; padding: 20px; border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline); }
 .result h2 { font-family: var(--display); font-size: 1.75rem; letter-spacing: -.02em; }
@@ -135,6 +101,7 @@
 .stat-grid span { color: var(--text-2); font-size: .75rem; }
 .dist { display: grid; gap: 6px; padding: 0; margin: 10px 0 0; list-style: none; }
 .dist li { display: flex; align-items: center; gap: 8px; }
+.dist.wide span { width: 22px; }
 .dist span { width: 18px; color: var(--text-2); font-size: .875rem; text-align: right; }
 .dist i { display: block; min-width: 24px; padding: 2px 8px; border-radius: 4px; background: var(--green-fill); color: #fff; font-style: normal; font-size: .8125rem; text-align: right; }
 
@@ -146,8 +113,7 @@
 .arch-item strong { color: var(--text); font-size: .9375rem; }
 .arch-item small { font-size: .75rem; }
 .arch-item i { position: absolute; top: 4px; right: 6px; font-style: normal; font-size: .75rem; }
-.arch-item.won { background: #14281e; } .arch-item.won i { color: var(--green); }
-.arch-item.lost { background: #321a21; } .arch-item.lost i { color: var(--red-ink); }
+.arch-item.done { background: #14281e; } .arch-item.done i { color: #d5f6e3; font-weight: 600; }
 .arch-item.playing { background: #2b2412; }
 .arch-item[aria-current="page"] { box-shadow: 0 0 0 2px var(--text); }
 
@@ -169,7 +135,6 @@
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 
 @media (max-width: 760px) {
-  .daily-grid { grid-template-columns: 1fr; }
   .prose { padding-top: 24px; }
   .site-footer-wide { margin-top: 56px; }
 }
@@ -188,3 +153,36 @@
 
 .hero .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .hero .hero-actions .btn { margin-top: 0; }
+
+/* The ten-question quiz */
+.q-strip { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; padding: 0; margin: 0 0 20px; list-style: none; }
+.q-dot { display: grid; place-items: center; height: 34px; border-radius: 8px; background: var(--raised); color: var(--muted); font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.q-dot.is-current { background: var(--raised-hover); color: var(--text); box-shadow: 0 0 0 2px var(--text); }
+.q-dot.q-first { background: var(--green-fill); color: #fff; }
+.q-dot.q-later { background: var(--amber-fill); color: #fff; }
+.q-dot.q-miss { background: #5a1f2c; color: #ffdee5; }
+.q-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.q-meta h2 { font-size: 1.25rem; letter-spacing: -.01em; }
+.q-kind { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; background: var(--raised); color: var(--text-2); font-size: .8125rem; font-weight: 600; }
+.q-ask { margin: 6px 0 14px; color: var(--text-2); }
+.feedback { margin-top: 4px; padding: 20px; border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline); }
+.feedback.is-won { box-shadow: 0 0 0 1px var(--green-fill); }
+.feedback.is-lost { box-shadow: 0 0 0 1px #5a1f2c; }
+.feedback h2 { margin-top: 10px; font-family: var(--display); font-size: 1.75rem; letter-spacing: -.02em; }
+.score-big { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 0; }
+.score-big strong { font-family: var(--display); font-size: 3.5rem; line-height: 1; letter-spacing: -.03em; }
+.score-big span { color: var(--text-2); font-size: 1.25rem; }
+.rv-head { margin-top: 24px; font-size: 1rem; }
+.review { display: grid; gap: 6px; padding: 0; margin: 10px 0 0; list-style: none; }
+.review li { display: grid; grid-template-columns: 22px 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--raised); font-size: .9375rem; }
+.review .rv-n { color: var(--muted); font-size: .8125rem; text-align: center; }
+.review .rv-mark { font-weight: 700; }
+.review .rv-first .rv-mark { color: var(--green); }
+.review .rv-later .rv-mark { color: #f1d68f; }
+.review .rv-miss .rv-mark { color: var(--red-ink); }
+.review .rv-title { overflow-wrap: anywhere; font-weight: 500; }
+.review .rv-kind { color: var(--muted); font-size: .8125rem; }
+@media (max-width: 520px) {
+  .q-strip { gap: 4px; }
+  .q-dot { height: 30px; font-size: .75rem; }
+}

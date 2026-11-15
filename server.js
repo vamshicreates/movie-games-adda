@@ -503,6 +503,10 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
       need(req.method === 'GET' || req.method === 'HEAD', 405, 'This action is not available.');
       need(!path.startsWith('/media/daily/'), 404, 'This page was not found.'); // daily frames are served through the API so file names cannot give the answer away
       const served = renderSite(path, originOf(req), clock());
+      if (served?.redirect) {
+        res.writeHead(301, { Location: served.redirect, 'Cache-Control': 'no-cache' });
+        return res.end();
+      }
       if (served) {
         res.writeHead(200, { 'Content-Type': served.type, 'Cache-Control': 'no-cache', 'Content-Length': Buffer.byteLength(served.body) });
         return res.end(req.method === 'HEAD' ? undefined : served.body);
