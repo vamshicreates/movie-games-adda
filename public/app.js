@@ -1,6 +1,7 @@
 import { answerFormats, modes } from './modes.js';
 import { icon, cardArt } from './art.js';
 import * as sound from './sound.js';
+import { autoNext, cancelAutoNext } from './autonext.js';
 
 // Seconds the blurred photo is shown before time is up.
 const photoSeconds = 10;
@@ -235,6 +236,7 @@ function home(data) {
 }
 
 function showRound(round) {
+  cancelAutoNext();
   const mode = modes[round.mode];
   const typed = round.answerFormat === 'typed';
   const reveal = round.answerFormat === 'reveal';
@@ -445,7 +447,11 @@ function showRound(round) {
     showRound(await post(`/rounds/${round.id}/next`, { questionId: question.id }));
     main.querySelector('#question-title').scrollIntoView({ block: 'nearest' });
   });
-  if (feedback) main.querySelector('#next').focus({ preventScroll: true });
+  if (feedback) {
+    main.querySelector('#next').focus({ preventScroll: true });
+    // Songs and scenes have details worth reading; a name alone needs less time.
+    autoNext(main.querySelector('#next'), (!reveal && (question.details?.dialogue || (round.mode === 'song' && question.details))) ? 6500 : 3500);
+  }
   else if (photoGuess && window.matchMedia('(pointer: fine)').matches) main.querySelector('#guess').focus({ preventScroll: true });
   else main.querySelector('#question-title').focus({ preventScroll: true });
 }

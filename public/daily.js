@@ -2,6 +2,7 @@
 // Results, streaks and stats are kept in the browser; the server only holds the puzzles and checks guesses.
 import { icon } from './art.js';
 import * as S from './daily-store.js';
+import { autoNext, cancelAutoNext } from './autonext.js';
 
 const esc = value => String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -394,6 +395,8 @@ async function gamePage(n) {
         <dl><div><dt>Year</dt><dd>${esc(answer.year ?? '')}</dd></div><div><dt>Hero</dt><dd>${esc(answer.hero ?? '')}</dd></div><div><dt>Director</dt><dd>${esc(answer.director ?? '')}</dd></div><div><dt>Music</dt><dd>${esc(answer.music ?? '')}</dd></div></dl></div></div>`;
   };
 
+  const AUTO_MS = 4500; // how long the answer stays up before the next question appears
+
   function renderFeedback(index) {
     const item = record.items[index];
     const won = item.status === 'won';
@@ -404,10 +407,12 @@ async function gamePage(n) {
       ${answerCard(item)}
       <div class="share-row"><button type="button" class="btn primary" id="next">${last ? 'See my score' : 'Next question'} ${icon('arrow', 18)}</button></div></div>`;
     $('#next').addEventListener('click', () => {
+      cancelAutoNext();
       reviewing = null;
       renderAll();
       if (S.isFinished(record)) $('#r-title')?.focus(); else $('#q-title')?.focus();
     });
+    autoNext($('#next'), AUTO_MS);
   }
 
   function renderResult() {

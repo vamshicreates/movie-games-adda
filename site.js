@@ -117,6 +117,8 @@ const pages = {
 <p>Before you start, choose how to answer: pick the film from four options, or type its name with no options shown. The same choice appears in Guess the Actor, Guess the Actress, Guess the Movie by Frames and Guess the Song.</p>
 <h2>Guesses and hints</h2>
 <p>You have three guesses on every question. Each wrong guess unlocks a new clue: another frame or another line, and after that hints such as the genre, the year and the initials of the director and hero. Not sure? You can skip a question, but that uses a guess.</p>
+<h2>Moving on</h2>
+<p>After each answer you see the right film for a few seconds, then the next question appears on its own. Tap Next question if you want to move faster.</p>
 <h2>Your score</h2>
 <p>After each question you see the answer, with the film\'s year, hero, director and music director. At the end you get a score out of 7 and a grid of coloured squares to share: green for a first-guess answer, yellow for a later answer and red for a miss.</p>
 <h2>Streaks, stats and the archive</h2>
@@ -178,6 +180,7 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <h2>24 November 2026: Pick or type</h2>
 <ul>
 <li>Every game now lets you choose how to answer: pick from four options, or type it. Your choice starts the game that way.</li>
+<li>After you answer, the correct answer stays up for a few seconds and the next question appears by itself. Tap Next to skip the wait.</li>
 </ul>
 <h2>24 November 2026: New name</h2>
 <ul>

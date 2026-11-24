@@ -204,3 +204,8 @@
 .pick-options .option small { display: block; color: var(--muted); font-size: .8125rem; font-weight: 400; }
 .pick-options .option > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 520px) { .pick-options { grid-template-columns: 1fr; } }
+
+/* Countdown on the Next button while the next question is about to appear */
+.btn.auto { position: relative; overflow: hidden; }
+.btn.auto::after { content: ''; position: absolute; inset: auto 0 0 0; height: 3px; background: rgb(255 255 255 / .6); transform-origin: left; transform: scaleX(0); animation: auto-fill var(--auto-ms, 4s) linear forwards; }
+@keyframes auto-fill { to { transform: scaleX(1); } }
