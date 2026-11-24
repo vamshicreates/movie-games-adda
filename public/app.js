@@ -105,10 +105,10 @@ function showLevels(data, industryId, modeId) {
     <section class="panel levels">
       <p class="subtle">${esc(mode.name)}</p>
       <h1 id="question-title" tabindex="-1">Choose a level</h1>
-      <p>Each level has ten ${mode.unit ?? 'questions'}. Finish a level to unlock the next one. ${done} of ${levels.length} complete.</p>
+      <p>Each level has seven ${mode.unit ?? 'questions'}. Finish a level to unlock the next one. ${done} of ${levels.length} complete.</p>
       <div class="level-grid">${levels.map(item => {
         const locked = item.state === 'locked';
-        const label = { done: `${item.score} / 10`, playing: 'Resume', open: 'Start', locked: 'Locked' }[item.state];
+        const label = { done: `${item.score} / ${item.total ?? 7}`, playing: 'Resume', open: 'Start', locked: 'Locked' }[item.state];
         const glyph = item.state === 'done' ? icon('check', 18) : locked ? icon('lock', 18) : icon('play', 18);
         return `<button type="button" class="level-tile level-${item.state}" data-level="${item.level}" ${locked || item.state === 'done' ? 'disabled' : ''} aria-label="Level ${item.level}, ${label}">
           <span class="level-glyph">${glyph}</span><strong>Level ${item.level}</strong><small>${label}</small></button>`;
@@ -175,7 +175,7 @@ function home(data) {
     if (active) return answerFormats[active.answerFormat].label;
     if (!live) return 'New questions coming';
     if (live === played) return placeholder;
-    return live - played === 1 ? '10 questions' : `${live - played} fresh rounds`;
+    return live - played === 1 ? '7 questions' : `${live - played} fresh rounds`;
   };
   const liveModes = Object.entries(modes).filter(([, mode]) => !mode.soon);
   const soonModes = Object.entries(modes).filter(([, mode]) => mode.soon);
@@ -213,7 +213,7 @@ function home(data) {
     <section id="how" class="how" aria-labelledby="how-title">
       <h2 id="how-title">How to play</h2>
       <div class="steps">
-        <div>${icon('film', 20)}<div><strong>Pick a game</strong><p>Each level has ten questions.</p></div></div>
+        <div>${icon('film', 20)}<div><strong>Pick a game</strong><p>Each level has seven questions.</p></div></div>
         <div>${icon('play', 20)}<div><strong>Type it, or pass</strong><p>Name the actor, actress or movie. Close spellings count. For songs, reveal the answer and score yourself.</p></div></div>
         <div>${icon('lock', 20)}<div><strong>Unlock the next level</strong><p>Finish a level to open the next one.</p></div></div>
       </div>
@@ -253,8 +253,8 @@ function showRound(round) {
       <section class="results panel">
         <p class="subtle">${esc(mode.name)}${round.level ? ` · Level ${round.level}` : ''}${photoGuess || typed ? ' · Typed answers' : reveal ? '' : ' · Picked answers'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
-        <div class="score">${round.score}<span> / 10</span></div>
-        <p>${reveal ? (photoGuess ? `You named ${round.score} of 10${mode.scene ? ' movies' : ''}.` : `You recognised ${round.score} of 10.`) : `You got ${round.score} of 10 correct.`}</p>
+        <div class="score">${round.score}<span> / ${round.total}</span></div>
+        <p>${reveal ? (photoGuess ? `You named ${round.score} of ${round.total}${mode.scene ? ' movies' : ''}.` : `You recognised ${round.score} of ${round.total}.`) : `You got ${round.score} of ${round.total} correct.`}</p>
         <div class="result-actions">${mode.levels
           ? `<button type="button" class="btn primary" id="${round.nextLevel ? 'next-level' : 'all-levels'}">${round.nextLevel ? `Continue to Level ${round.nextLevel} ${icon('arrow', 18)}` : 'All levels'}</button>`
           : `<button type="button" class="btn primary" id="replay">${icon('repeat', 19)} Play again</button>`}<a class="btn secondary" href="${back}">Choose a game</a></div>${mode.levels && round.nextLevel ? `<p class="unlock-note">${icon('check', 16)} Level ${round.nextLevel} unlocked.</p>` : ''}
@@ -317,7 +317,7 @@ function showRound(round) {
   main.innerHTML = `<div class="shell play-shell">
     <div class="play-top"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>${reveal && !song ? `<button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="${sound.isMuted()}">${icon(sound.isMuted() ? 'mute' : 'volume', 18)}<span>${sound.isMuted() ? 'Sound off' : 'Sound on'}</span></button>` : ''}</div>
     <section class="panel quiz${photoGuess && !scene ? ' typed-photo' : ''}${scene ? ' typed-scene' : ''}" aria-labelledby="question-title">
-      <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
+      <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of ${round.total}</strong></div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
       ${clue}
       ${round.starter && mode.clue === 'image' && !reveal && !blurredPick ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
@@ -478,7 +478,7 @@ async function admin(message = '') {
   }
   const industryName = id => library.industries.find(item => item.id === id)?.name ?? id;
   main.innerHTML = `<div class="shell admin">
-    <div class="admin-top"><div><a href="/" class="back-link">${icon('back', 18)} Back to games</a><h1>Question library</h1><p>Build ten-question sets and publish them to the games.</p></div><button class="btn secondary" id="logout" type="button">Sign out</button></div>
+    <div class="admin-top"><div><a href="/" class="back-link">${icon('back', 18)} Back to games</a><h1>Question library</h1><p>Build seven-question sets and publish them to the games.</p></div><button class="btn secondary" id="logout" type="button">Sign out</button></div>
     <div class="admin-tools">
       <button class="btn primary" id="new" type="button">${icon('plus', 18)} New question set</button>
       <button class="btn secondary" id="import" type="button">${icon('upload', 18)} Import JSON</button>
@@ -487,7 +487,7 @@ async function admin(message = '') {
     <p class="status" role="status"></p>
     <section class="panel set-library" aria-labelledby="sets-heading">
       <h2 id="sets-heading">Question sets <span>${library.sets.length}</span></h2>
-      ${library.sets.length ? `<ul class="set-list">${library.sets.map(set => `<li><div><strong>${esc(set.title)}</strong><small>${esc(industryName(set.industry))} · ${esc(modes[set.mode].name)} · 10 questions</small></div><div class="set-actions"><span class="badge badge-${esc(set.status)}">${esc(set.status)}</span><button class="btn small secondary" type="button" data-open="${esc(set.id)}">${set.status === 'draft' ? 'Edit' : 'View'}</button>${set.status === 'live' ? `<button class="btn small secondary" type="button" data-archive="${esc(set.id)}">Archive</button>` : ''}</div></li>`).join('')}</ul>` : '<p>No sets yet. Create a set to get started.</p>'}
+      ${library.sets.length ? `<ul class="set-list">${library.sets.map(set => `<li><div><strong>${esc(set.title)}</strong><small>${esc(industryName(set.industry))} · ${esc(modes[set.mode].name)} · plays 7 questions</small></div><div class="set-actions"><span class="badge badge-${esc(set.status)}">${esc(set.status)}</span><button class="btn small secondary" type="button" data-open="${esc(set.id)}">${set.status === 'draft' ? 'Edit' : 'View'}</button>${set.status === 'live' ? `<button class="btn small secondary" type="button" data-archive="${esc(set.id)}">Archive</button>` : ''}</div></li>`).join('')}</ul>` : '<p>No sets yet. Create a set to get started.</p>'}
     </section>
     <dialog id="dialog"></dialog>
   </div>`;
@@ -531,7 +531,7 @@ function addIndustry() {
   });
 }
 function importSets(library) {
-  showDialog('Import question sets', `<p>Each set needs ten questions, four options per question, and a correct answer index from 0 to 3. Include an optional aliases array for alternate spellings. For media questions, upload the file first and use its uploaded path.</p>
+  showDialog('Import question sets', `<p>Each set needs seven to ten questions, four options per question, and a correct answer index from 0 to 3. Include an optional aliases array for alternate spellings. For media questions, upload the file first and use its uploaded path.</p>
     <label>Sets JSON<textarea name="json" required rows="10" spellcheck="false" placeholder='[{"industry":"${esc(library.industries[0].id)}","mode":"emoji","title":"Round name","questions":[{"text":"🎞️","options":["Film A","Film B","Film C","Film D"],"correct":0}]}]'></textarea></label>
     <label>Import as<select name="state"><option value="draft">Draft</option><option value="live">Publish immediately</option></select></label>
     <button class="btn primary" type="submit">Import sets</button>`, async form => {
@@ -545,11 +545,11 @@ function importSets(library) {
 function editSet(library, existing) {
   const readonly = existing && existing.status !== 'draft';
   const initialMode = existing?.mode ?? 'frame';
-  const questions = existing?.questions ?? Array.from({ length: 10 }, () => ({ options: ['', '', '', ''], correct: 0 }));
+  const questions = existing?.questions ?? Array.from({ length: 7 }, () => ({ options: ['', '', '', ''], correct: 0 }));
   const editor = `<div class="shell admin editor">
     <button class="back-link link-button" type="button" id="library-back">${icon('back', 18)} Question library</button>
     <h1>${existing ? (readonly ? 'View question set' : 'Edit question set') : 'New question set'}</h1>
-    <p>${readonly ? 'This set has already been published.' : 'Add ten clues and mark one correct answer for each.'}</p>
+    <p>${readonly ? 'This set has already been published.' : 'Add seven clues and mark one correct answer for each.'}</p>
     <form class="editor-form">
       <fieldset class="panel editor-meta" ${readonly ? 'disabled' : ''}>
         <label>Set title<input name="title" required maxlength="100" value="${esc(existing?.title)}"></label>
@@ -604,7 +604,7 @@ function editSet(library, existing) {
     status('Saving set…');
     try {
       if (usesMedia) {
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < questions.length; i++) {
           const file = fields[`file-${i}`].files[0];
           const path = fields[`media-${i}`];
           if (file) {

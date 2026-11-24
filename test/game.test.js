@@ -46,7 +46,7 @@ async function fixture(t) {
   return { client, admin, url };
 }
 
-test('seeds eight Tollywood games, keeps answers private, resumes a round, and scores ten picks', async t => {
+test('seeds eight Tollywood games, keeps answers private, resumes a round, and scores seven picks', async t => {
   const { client, admin, url } = await fixture(t);
   const player = client();
   const catalog = await player('/api/catalog');
@@ -63,7 +63,7 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
   await player(path + '/next', { questionId: round.question.id }, 409);
   const clues = new Set();
   let score = 0;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 7; i++) {
     assert.equal(round.position, i);
     clues.add(round.question.text);
     const input = { questionId: round.question.id, picked: 0 };
@@ -72,7 +72,7 @@ test('seeds eight Tollywood games, keeps answers private, resumes a round, and s
     assert.deepEqual((await player(path + '/answer', { ...input, picked: 1 })).feedback, answered.feedback);
     round = await player(path + '/next', input);
   }
-  assert.equal(clues.size, 10);
+  assert.equal(clues.size, 7);
   assert.equal(round.complete, true);
   assert.equal(round.score, score);
   await player('/api/rounds', start, 409);
@@ -107,7 +107,7 @@ test('scores typed guesses with aliases while hiding choices and preserving form
   await player(path + '/answer', { questionId: round.question.id, picked: 0 }, 400);
   await player(path + '/answer', { questionId: round.question.id, guess: '   ' }, 400);
   const guesses = [' correct! ', 'ALTERNATE-NAME', 'సమాధానం', 'incorrect'];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 7; i++) {
     assert.deepEqual(Object.keys(round.question).sort(), ['alt', 'id', 'media', 'text']);
     const questionId = round.question.id;
     const guess = guesses[i] ?? 'Correct';
@@ -118,7 +118,7 @@ test('scores typed guesses with aliases while hiding choices and preserving form
     assert.deepEqual((await player(path + '/answer', { questionId, guess: 'New guess' })).feedback, answered.feedback);
     round = await player(path + '/next', { questionId });
   }
-  assert.equal(round.score, 9);
+  assert.equal(round.score, 6);
   assert.equal(round.review[3].picked, 'incorrect');
   await player('/api/rounds', { ...start, answerFormat: 'multiple' }, 409);
 
@@ -138,7 +138,7 @@ test('publishes fresh sets without duplicate clues, supports 20 sets, and isolat
   const finish = async (round, expectedAnswer) => {
     const path = `/api/rounds/${round.id}`;
     const seen = new Set();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 7; i++) {
       const { id: questionId, options, text } = round.question;
       seen.add(text);
       const picked = expectedAnswer ? options.indexOf(expectedAnswer) : 0;
@@ -153,7 +153,7 @@ test('publishes fresh sets without duplicate clues, supports 20 sets, and isolat
   await admin(`/api/admin/sets/${draft.ids[0]}/publish`, {});
   const next = await player('/api/rounds', start, 201);
   const second = await finish(next, 'Correct');
-  assert.equal(second.score, 10);
+  assert.equal(second.score, 7);
   assert.equal(first.seen.intersection(second.seen).size, 0);
 
   await admin('/api/admin/sets', { sets: [set(2), set(1)], status: 'live' }, 409);
@@ -183,7 +183,7 @@ test('song levels unlock in order and reveal the song details after each self-sc
   assert(round.question.name && round.question.details.composer !== undefined && round.question.media.startsWith('/media/song-'));
   assert.equal((await state())[0].state, 'playing');
   await player('/api/rounds', { industry: 'tollywood', mode: 'song', level: 2 }, 409);
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 7; i++) {
     round = await player(`/api/rounds/${round.id}/answer`, { questionId: round.question.id, picked: i < 7 ? 0 : 1 });
     round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
   }
@@ -226,7 +226,7 @@ test('Guess the Movie: 24 levels of ten distinct movies, typed answers with alte
   let round = await player('/api/rounds', { industry: 'tollywood', mode: 'frame' }, 201);
   assert.equal(round.level, 1);
   assert.equal(round.nextLevel, 2);
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 7; i++) {
     const known = byMedia.get(round.question.media);
     const movie = known.options[known.correct];
     assert.equal(round.question.name, undefined);
@@ -238,7 +238,7 @@ test('Guess the Movie: 24 levels of ten distinct movies, typed answers with alte
     assert.equal(round.question.details.dialogue, known.details.dialogue, 'the dialogue is shown once answered');
     round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
   }
-  assert.equal(round.score, 8);
+  assert.equal(round.score, 5);
 });
 
 test('hero and heroine rounds are typed levels: forgiving spelling, pass, and names stay hidden until answered', async t => {
@@ -252,7 +252,7 @@ test('hero and heroine rounds are typed levels: forgiving spelling, pass, and na
     let round = await player('/api/rounds', { industry: 'tollywood', mode }, 201);
     assert.equal(round.level, 1);
     assert.equal(round.nextLevel, 2);
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 7; i++) {
       const name = names.get(round.question.media);
       assert.ok(name, round.question.media);
       assert.equal(round.question.name, undefined, 'the name is not sent before answering');
@@ -279,7 +279,7 @@ test('hero and heroine rounds are typed levels: forgiving spelling, pass, and na
       assert.equal(round.feedback.correctAnswer, name);
       round = await player(`/api/rounds/${round.id}/next`, { questionId: round.question.id });
     }
-    assert.equal(round.score, 8);
+    assert.equal(round.score, 5);
     assert.deepEqual(round.review.slice(0, 2).map(item => item.picked), ['Passed', 'Zzyzx Qwerty']);
     assert.deepEqual((await levels()).map(l => l.state).slice(0, 2), ['done', 'open']);
     round = await player('/api/rounds', { industry: 'tollywood', mode, level: 2 }, 201);
@@ -332,4 +332,18 @@ test('every game can be answered by picking or typing, and the choice decides ho
 
   // Nothing about the old call shape changes: no format means the original flow.
   assert.equal((await client()('/api/rounds', start('hero'), 201)).answerFormat, 'reveal');
+});
+
+test('every level round has seven questions, and sets must hold seven to ten', async t => {
+  const { client, admin } = await fixture(t);
+  const player = client();
+  for (const mode of ['hero', 'heroine', 'song', 'frame']) {
+    const round = await client()('/api/rounds', { industry: 'tollywood', mode, level: 1, answerFormat: 'multiple' }, 201);
+    assert.equal(round.total, 7, mode);
+  }
+  const tooShort = { ...set(1), questions: set(1).questions.slice(0, 6) };
+  await admin('/api/admin/sets', { sets: [tooShort], status: 'draft' }, 400);
+  const sevenOnly = { ...set(1), questions: set(1).questions.slice(0, 7) };
+  await admin('/api/admin/sets', { sets: [sevenOnly], status: 'draft' }, 201);
+  await player('/api/catalog');
 });

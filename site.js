@@ -196,7 +196,7 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 </ul>
 <h2>Earlier</h2>
 <ul>
-<li>Guess the Actor, Guess the Actress, Guess the Movie by Frames and Guess the Song, in levels of ten.</li>
+<li>Guess the Actor, Guess the Actress, Guess the Movie by Frames and Guess the Song, in levels of seven questions.</li>
 </ul>`,
   },
   '/credits': {

@@ -15,7 +15,7 @@ Open [the game](http://127.0.0.1:3000) or [the admin panel](http://127.0.0.1:300
 ## Publish more rounds
 
 1. Sign in at `/admin` and choose **New question set**.
-2. Choose a film industry and a game. Fill all ten questions, each with four distinct answers and one marked correct.
+2. Choose a film industry and a game. Fill seven to ten questions (each round plays seven, picked at random), each with four distinct answers and one marked correct.
 3. Upload a still, meme picture, or audio clip for each media question and provide an accessible description or transcript. The upload limit is 8 MB per file. The other games use text clues. Add alternate spellings or names for typed answers where appropriate.
 4. Choose **Save draft** or **Publish set**. Published sets are immediately available. A published set can be archived while any rounds already underway remain playable.
 

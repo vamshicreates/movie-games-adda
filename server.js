@@ -147,6 +147,10 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     }
   });
 
+  // Every round plays seven questions. Sets may hold seven to ten; a round plays seven of them, picked at random.
+  const ROUND_LENGTH = 7;
+  const SET_MAX = 10;
+
   function validateSet(input, starter = false) {
     need(input && typeof input === 'object', 400, 'Enter a question set.');
     const { industry, mode } = input;
@@ -154,7 +158,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     need(typeof mode === 'string' && Object.hasOwn(modes, mode), 400, 'Choose a game.');
     const title = field(input.title, 100);
     need(title, 400, 'Give the set a title of 1–100 characters.');
-    need(Array.isArray(input.questions) && input.questions.length === 10, 400, 'Each set needs exactly 10 questions.');
+    need(Array.isArray(input.questions) && input.questions.length >= ROUND_LENGTH && input.questions.length <= SET_MAX, 400, `Each set needs ${ROUND_LENGTH} to ${SET_MAX} questions.`);
     const fingerprints = new Set();
     const questions = input.questions.map((question, i) => {
       const label = `Question ${i + 1}`;
@@ -233,16 +237,17 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
   const attempts = new Map();
   function levelList(industry, mode, who) {
     const list = rows(`
-      SELECT s.id, r.id AS round, r.position, r.answers FROM sets s
+      SELECT s.id, r.id AS round, r.position, r.answers, r.questions AS played FROM sets s
       LEFT JOIN rounds r ON r.set_id = s.id AND r.player = ?
       WHERE s.status = 'live' AND s.industry = ? AND s.mode = ? ORDER BY s.created, s.id
     `, who, industry, mode);
     let unlocked = true;
     return list.map((row, index) => {
-      const done = row.round && row.position === 10;
+      const total = row.round ? JSON.parse(row.played).length : ROUND_LENGTH;
+      const done = row.round && row.position >= total;
       const state = done ? 'done' : row.round ? 'playing' : unlocked ? 'open' : 'locked';
       if (!done) unlocked = false;
-      return { level: index + 1, id: row.id, round: row.round, state, score: done ? JSON.parse(row.answers).filter(answer => answer.correct).length : null };
+      return { level: index + 1, id: row.id, round: row.round, state, total, score: done ? JSON.parse(row.answers).filter(answer => answer.correct).length : null };
     });
   }
   function catalog(who) {
@@ -254,10 +259,10 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     `, who);
     const active = rows(`
       SELECT r.id, r.answer_format AS answerFormat, s.industry, s.mode FROM rounds r JOIN sets s ON s.id = r.set_id
-      WHERE r.player = ? AND r.position < 10 ORDER BY r.created DESC
+      WHERE r.player = ? AND r.position < json_array_length(r.questions) ORDER BY r.created DESC
     `, who);
     const levels = industries.flatMap(({ id: industry }) => Object.entries(modes).filter(([, mode]) => mode.levels)
-      .flatMap(([mode]) => levelList(industry, mode, who).map(({ level, state, score }) => ({ industry, mode, level, state, score }))));
+      .flatMap(([mode]) => levelList(industry, mode, who).map(({ level, state, score, total }) => ({ industry, mode, level, state, score, total }))));
     return { industries, counts, active, levels };
   }
   function fetchRound(id, who) {
@@ -273,14 +278,14 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     const questions = JSON.parse(round.questions);
     const answers = JSON.parse(round.answers);
     const { id, title, industry, industryName, mode, starter, position, answer_format: answerFormat } = round;
-    const header = { id, title, industry, industryName, mode, starter: !!starter, position, answerFormat, total: 10 };
+    const header = { id, title, industry, industryName, mode, starter: !!starter, position, answerFormat, total: questions.length };
     if (modes[mode].levels) {
       const live = rows("SELECT id FROM sets WHERE status = 'live' AND industry = ? AND mode = ? ORDER BY created, id", industry, mode);
       header.level = live.findIndex(set => set.id === round.set_id) + 1;
       header.levelTotal = live.length;
       header.nextLevel = header.level < live.length ? header.level + 1 : null;
     }
-    if (position === 10) return {
+    if (position >= questions.length) return {
       ...header, complete: true, score: answers.filter(answer => answer.correct).length,
       review: questions.map(({ options, correct }, i) => ({
         answer: options[correct], picked: answers[i].guess ?? (answers[i].passed ? 'Passed' : answerFormat === 'reveal' ? 'Not recognised' : options[answers[i].picked]), correct: answers[i].correct,
@@ -330,7 +335,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
           if (wanted.round) return wanted.round;
           const set = query('SELECT id, questions, starter FROM sets WHERE id = ?', wanted.id);
           const id = randomUUID();
-          const questions = shuffle(JSON.parse(set.questions)).map(question => {
+          const questions = shuffle(JSON.parse(set.questions)).slice(0, ROUND_LENGTH).map(question => {
             const options = shuffle(question.options);
             return { ...question, options, aliases: question.aliases ?? [], correct: options.indexOf(question.options[question.correct]) };
           });
@@ -340,7 +345,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
         }
         const current = query(`
           SELECT r.id FROM rounds r JOIN sets s ON s.id = r.set_id
-          WHERE r.player = ? AND s.industry = ? AND s.mode = ? AND r.position < 10 ORDER BY r.created DESC LIMIT 1
+          WHERE r.player = ? AND s.industry = ? AND s.mode = ? AND r.position < json_array_length(r.questions) ORDER BY r.created DESC LIMIT 1
         `, who, industry, mode);
         if (current) return current.id;
         const set = query(`
@@ -351,7 +356,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
         `, industry, mode, who);
         need(set, 409, 'You’re all caught up. A new round will appear when another set is published.');
         const id = randomUUID();
-        const questions = shuffle(JSON.parse(set.questions)).map(question => {
+        const questions = shuffle(JSON.parse(set.questions)).slice(0, ROUND_LENGTH).map(question => {
           const options = shuffle(question.options);
           const answer = question.options[question.correct];
           const aliases = question.aliases ?? (set.starter ? starterAliases(answer) : []);
