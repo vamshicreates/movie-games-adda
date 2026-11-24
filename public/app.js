@@ -288,7 +288,10 @@ function showRound(round) {
         ${d.note ? `<p class="song-note">${esc(d.note)}</p>` : ''}
       </div></div>`;
   const sceneClue = () => `<figure class="clue clue-scene"><img src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Two frames from one scene of a Telugu film'}" draggable="false">${revealed ? '' : `<div class="photo-timer" aria-live="off"><span id="count">${seconds}</span></div>`}</figure>${revealed ? `<div class="scene-card"><h2>${esc(question.name)}</h2>${d.dialogue ? `<p class="scene-label">The dialogue</p><blockquote>${esc(d.dialogue)}</blockquote>` : ''}</div>` : ''}`;
-  const clue = song ? songClue() : scene ? sceneClue() : reveal
+  // Actor and Actress photos stay blurred in every answer mode, and come into focus once the question is answered.
+  const blurredPick = !reveal && !song && Boolean(mode.typedGuess) && !mode.scene;
+  const blurredPickClue = () => `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name ?? '') : 'Blurred photo'}" draggable="false"></figure>`;
+  const clue = song ? songClue() : scene ? sceneClue() : blurredPick ? blurredPickClue() : reveal
     ? `<figure class="clue clue-photo ${revealed ? 'is-revealed' : ''}"><img id="photo" src="${esc(question.media)}" alt="${revealed ? esc(question.name) : 'Blurred photo'}" draggable="false">
         ${revealed ? '' : `<div class="photo-timer" aria-live="off"><span id="count">${seconds}</span></div>`}
         <figcaption id="reveal-name" ${revealed ? '' : 'hidden'}>${esc(question.name)}</figcaption></figure>`
@@ -317,7 +320,7 @@ function showRound(round) {
       <div class="quiz-meta"><span>${esc(mode.name)} · ${esc(round.title)}</span><strong>Question ${position + 1} of 10</strong></div>
       <h1 id="question-title" tabindex="-1">${esc(prompt)}</h1>
       ${clue}
-      ${round.starter && mode.clue === 'image' && !reveal ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
+      ${round.starter && mode.clue === 'image' && !reveal && !blurredPick ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
       ${round.starter && round.mode === 'audio' ? '<p class="clue-credit">Original narrated clue</p>' : ''}
       ${answerControl}
       ${feedback && !reveal && round.mode === 'song' && question.details ? `<div class="scene-card song-card"><h2>${esc(question.name)}</h2><p class="song-sub">${esc(d.movie ?? '')}${d.year ? ` · ${esc(d.year)}` : ''}</p><dl>${row('Music', d.composer)}${row('Singers', d.singers)}${row('Lyrics', d.lyricist)}</dl></div>` : ''}
