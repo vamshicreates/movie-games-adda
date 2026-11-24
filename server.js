@@ -497,7 +497,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     try {
       const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
       if (path.startsWith('/api/')) {
-        need(req.headers['sec-fetch-site'] !== 'cross-site', 403, 'Open this action from Movie Games Adda.');
+        need(req.headers['sec-fetch-site'] !== 'cross-site', 403, 'Open this action from Movie Games Daily.');
         return await api(req, res, path);
       }
       need(req.method === 'GET' || req.method === 'HEAD', 405, 'This action is not available.');
@@ -544,7 +544,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const adminPassword = configuredPassword ?? randomBytes(12).toString('base64url');
   const dbPath = resolve(process.env.DATA_DIR ?? resolve(root, 'data'), 'adda.sqlite');
   buildServer({ dbPath, adminPassword }).listen(port, host, () => {
-    console.log(`Movie Games Adda is running at http://${host}:${port}`);
+    console.log(`Movie Games Daily is running at http://${host}:${port}`);
     if (!configuredPassword) console.log(`Local admin password: ${adminPassword}`);
   });
 }

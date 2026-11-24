@@ -72,7 +72,7 @@ export function shareGrid(record) {
   const row = items => items.map(item => squares[grade(item)]).join('');
   return `${row(record.items.slice(0, 4))}\n${row(record.items.slice(4))}`;
 }
-export const shareText = (n, record, link) => `🎬 Movie Games Adda · Daily #${n} ${score(record)}\n${shareGrid(record)}\n${link}`;
+export const shareText = (n, record, link) => `🎬 Movie Games Daily #${n} ${score(record)}\n${shareGrid(record)}\n${link}`;
 export const challengeLink = (origin, n, record) => `${origin}/play/${n}?s=${scoreOf(record)}`;
 export const challengeText = (n, record, link) => `🎬 I scored ${score(record)} on Daily Telugu movie quiz #${n}. Can you beat me?\n${link}`;
 // "?s=7" from a friend's link, only valid between 0 and the number of questions.

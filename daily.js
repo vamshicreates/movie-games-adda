@@ -1,4 +1,4 @@
-// Daily puzzles for Movie Games Adda.
+// Daily puzzles for Movie Games Daily.
 // Stateless on purpose: the puzzle for a day is a pure function of the IST date, so every visitor gets the
 // same film and nothing has to live on the server (the Vercel deploy re-seeds its database on every cold start).
 import { createHash, createHmac } from 'node:crypto';

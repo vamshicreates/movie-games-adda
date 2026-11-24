@@ -223,7 +223,7 @@ test('share text hides the answers and challenge links carry the score', () => {
   assert.equal(S.score(record), '4/7');
   assert.equal(S.shareGrid(record), '🟩🟨🟥🟩\n🟩🟥🟥');
   const text = S.shareText(31, record, 'https://x.test/play');
-  assert.match(text, /Daily #31 4\/7/);
+  assert.match(text, /Movie Games Daily #31 4\/7/);
   assert.equal(S.challengeLink('https://x.test', 31, record), 'https://x.test/play/31?s=4');
   assert.equal(S.friendScore('?s=4'), 4);
   assert.equal(S.friendScore('?s=0'), 0);

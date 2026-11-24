@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { istDate } from './daily.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
-const SITE = 'Movie Games Adda';
+const SITE = 'Movie Games Daily';
 const INSTAGRAM = 'https://www.instagram.com/vamshicreatess';
 const CREDIT = 'https://vamshicreates.tech';
 
@@ -57,7 +57,7 @@ export const header = (current = '') => `<a class="skip" href="#main">Skip to co
     <div class="shell header-inner">
       <a class="brand" href="/" aria-label="${SITE} home">
         <img src="/logo.svg" width="35" height="35" alt="">
-        <span>Movie Games<span class="brand-accent"> Adda</span></span>
+        <span>Movie Games<span class="brand-accent"> Daily</span></span>
       </a>
       <nav aria-label="Main navigation">
         <a href="/play" class="nav-link daily-link"${current === 'play' ? ' aria-current="page"' : ''}>Daily</a>
@@ -69,7 +69,7 @@ export const header = (current = '') => `<a class="skip" href="#main">Skip to co
 
 export const footer = () => `<footer class="shell site-footer site-footer-wide">
     <div class="footer-top">
-      <a class="brand footer-brand" href="/"><img src="/logo.svg" width="26" height="26" alt=""><span>Movie Games<span class="brand-accent"> Adda</span></span></a>
+      <a class="brand footer-brand" href="/"><img src="/logo.svg" width="26" height="26" alt=""><span>Movie Games<span class="brand-accent"> Daily</span></span></a>
       <a class="social" href="${INSTAGRAM}" target="_blank" rel="noopener me">Instagram @vamshicreatess</a>
     </div>
     <nav class="footer-links" aria-label="Footer">
@@ -95,7 +95,7 @@ ${body}
 
 // ----- the information pages -----
 const faq = [
-  ['What is Movie Games Adda?', 'A free Telugu movie quiz site. Besides the level-based games on the home page, it has one daily quiz that everyone plays at the same time: seven questions, alternating a film frame and a dialogue.'],
+  ['What is Movie Games Daily?', 'A free Telugu movie quiz site. Besides the level-based games on the home page, it has one daily quiz that everyone plays at the same time: seven questions, alternating a film frame and a dialogue.'],
   ['When does the daily quiz change?', 'At midnight India time (IST). Every player gets the same seven films on the same day, so you can compare scores with friends.'],
   ['How many guesses do I get?', 'Three on every question. After a wrong guess you get another frame, another line or a hint such as the genre or the initials of the hero. You can also skip a question, which uses a guess.'],
   ['Can I type the movie name in Telugu?', 'Yes. Type in English or in Telugu script, or pick a film from the suggestions. Use the language switch to show film names in English or Telugu. Common spelling variations such as “Bahubali” or “Aravinda Sametha” are accepted.'],
@@ -125,7 +125,7 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
     ld: o => ({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }),
   },
   '/privacy': {
-    title: 'Privacy Policy', desc: 'What Movie Games Adda stores: your results stay in your browser, there are no accounts, no ads and no tracking scripts.',
+    title: 'Privacy Policy', desc: 'What Movie Games Daily stores: your results stay in your browser, there are no accounts, no ads and no tracking scripts.',
     body: `<h1>Privacy</h1>
 <p class="lede">Short version: no accounts, no ads, no tracking scripts. Your results stay in your browser.</p>
 <h2>What stays on your device</h2>
@@ -141,13 +141,13 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <p>If this policy changes we will note it on the <a href="/updates">updates page</a>. Questions? See <a href="/contact">Contact</a>.</p>`,
   },
   '/terms': {
-    title: 'Terms of Use', desc: 'The rules for using Movie Games Adda, a free fan-made Telugu movie quiz: personal use, no scraping, and how film material is treated.',
+    title: 'Terms of Use', desc: 'The rules for using Movie Games Daily, a free fan-made Telugu movie quiz: personal use, no scraping, and how film material is treated.',
     body: `<h1>Terms of use</h1>
-<p class="lede">Movie Games Adda is a free, fan-made quiz. By using it you agree to the points below.</p>
+<p class="lede">Movie Games Daily is a free, fan-made quiz. By using it you agree to the points below.</p>
 <h2>Use of the site</h2>
 <p>Play for fun and for your own personal use. Please do not scrape the site, automate guesses, or try to extract the answers, and do not attempt to disrupt the service. We may change or remove games at any time.</p>
 <h2>Film material</h2>
-<p>Movie names, stills and dialogue belong to their respective owners. They appear here only as small clues in a quiz, for commentary and entertainment. Movie Games Adda is not affiliated with, endorsed by, or sponsored by any film, studio or artist mentioned. If you own material and want it removed, see <a href="/credits">Credits and takedown</a>.</p>
+<p>Movie names, stills and dialogue belong to their respective owners. They appear here only as small clues in a quiz, for commentary and entertainment. Movie Games Daily is not affiliated with, endorsed by, or sponsored by any film, studio or artist mentioned. If you own material and want it removed, see <a href="/credits">Credits and takedown</a>.</p>
 <h2>No guarantees</h2>
 <p>The games are provided as they are. We take care with film details but they can contain mistakes, and we do not promise the site will always be available. Use of the site is at your own risk.</p>
 <h2>Your suggestions</h2>
@@ -156,7 +156,7 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <p>We may update these terms. Continued use means you accept the updated version. Changes are noted on the <a href="/updates">updates page</a>.</p>`,
   },
   '/contact': {
-    title: 'Contact', desc: 'Get in touch with Movie Games Adda: message on Instagram, suggest a missing film, report a mistake or send a takedown request.',
+    title: 'Contact', desc: 'Get in touch with Movie Games Daily: message on Instagram, suggest a missing film, report a mistake or send a takedown request.',
     body: `<h1>Contact</h1>
 <p class="lede">The quickest way to reach us is Instagram.</p>
 <p><a class="btn primary" href="${INSTAGRAM}" target="_blank" rel="noopener me">Message @vamshicreatess</a></p>
@@ -170,9 +170,13 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <p>Built by <a href="${CREDIT}" target="_blank" rel="noopener">Vamshi Creates</a>.</p>`,
   },
   '/updates': {
-    title: 'Updates and Changelog', desc: 'What is new on Movie Games Adda: the daily Telugu movie games, streaks, sharing, the archive and more.',
+    title: 'Updates and Changelog', desc: 'What is new on Movie Games Daily: the daily Telugu movie games, streaks, sharing, the archive and more.',
     body: `<h1>Updates</h1>
-<p class="lede">What is new on Movie Games Adda.</p>
+<p class="lede">What is new on Movie Games Daily.</p>
+<h2>24 November 2026: New name</h2>
+<ul>
+<li>Movie Games Adda is now Movie Games Daily, and the daily quiz is seven questions long.</li>
+</ul>
 <h2>15 November 2026: Daily Telugu movie quiz</h2>
 <ul>
 <li>One daily quiz of seven questions, alternating a film frame and a dialogue, with new films every day at midnight IST.</li>
@@ -187,7 +191,7 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 </ul>`,
   },
   '/credits': {
-    title: 'Credits and Takedown', desc: 'Who built Movie Games Adda, where film details come from, and how to request removal of any material.',
+    title: 'Credits and Takedown', desc: 'Who built Movie Games Daily, where film details come from, and how to request removal of any material.',
     body: `<h1>Credits and takedown</h1>
 <p class="lede">A fan-made quiz, built with love for Telugu cinema.</p>
 <h2>Built by</h2>

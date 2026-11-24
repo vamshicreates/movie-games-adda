@@ -99,7 +99,7 @@ function showLevels(data, industryId, modeId) {
   const mode = modes[modeId];
   const levels = data.levels.filter(item => item.industry === industryId && item.mode === modeId);
   const done = levels.filter(item => item.state === 'done').length;
-  document.title = `${mode.name} | Movie Games Adda`;
+  document.title = `${mode.name} | Movie Games Daily`;
   main.innerHTML = `<div class="shell play-shell"><a href="${lobbyURL(industryId)}" class="back-link">${icon('back', 18)} All games</a>
     <section class="panel levels">
       <p class="subtle">${esc(mode.name)}</p>
@@ -182,7 +182,7 @@ function home(data) {
     </article>`;
   }).join('');
   const soonItems = soonModes.map(([id, mode]) => `<article class="soon-item">${icon(id, 20)}<h4>${esc(mode.name)}</h4><p>${esc(mode.desc)}</p></article>`).join('');
-  document.title = 'Movie Games Adda | Daily Telugu movie games';
+  document.title = 'Movie Games Daily | Daily Telugu movie games';
   main.innerHTML = `<div class="shell home">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
@@ -236,7 +236,7 @@ function showRound(round) {
   const seconds = mode.seconds ?? photoSeconds;
   clearInterval(revealTimer);
   const back = lobbyURL(round.industry);
-  document.title = `${mode.name} | Movie Games Adda`;
+  document.title = `${mode.name} | Movie Games Daily`;
   if (round.complete) {
     main.innerHTML = `<div class="shell play-shell"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>
       <section class="results panel">
@@ -440,7 +440,7 @@ function showRound(round) {
 }
 
 async function admin(message = '') {
-  document.title = 'Admin | Movie Games Adda';
+  document.title = 'Admin | Movie Games Daily';
   let library;
   try { library = await api('/admin/library'); }
   catch (error) {

@@ -1,4 +1,4 @@
-# Movie Games Adda
+# Movie Games Daily
 
 A black-and-red film quiz for phones and laptops. The Tollywood launch has one ten-question set each for Frames, Lyrics, Emojis, Badly Explained Plot, and Guess the Meme as coming soon, plus live Guess the Actor, Guess the Actress, Guess the Movie (one film frame, typed answer) and Guess the Song games with ten-question levels. Players choose multiple choice or typed answers when starting a round.
 
