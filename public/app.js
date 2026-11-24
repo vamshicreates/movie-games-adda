@@ -115,14 +115,20 @@ function showLevels(data, industryId, modeId) {
       <p class="status" role="status"></p>
     </section></div>`;
   main.querySelectorAll('[data-level]').forEach(el => {
-    el.addEventListener('click', action(el, () => startRound(industryId, modeId, el, 'reveal', Number(el.dataset.level))));
+    el.addEventListener('click', action(el, () => {
+      const level = Number(el.dataset.level);
+      // A level already under way resumes in the way it was started; a new one asks how to answer first.
+      if (levels.find(item => item.level === level)?.state === 'playing') return startRound(industryId, modeId, el, 'multiple', level);
+      chooseFormat(industryId, modeId, level);
+    }));
   });
   main.querySelector('#question-title').focus({ preventScroll: true });
   window.scrollTo(0, 0);
 }
 
 let revealTimer;
-function chooseFormat(industry, mode) {
+function chooseFormat(industry, mode, level) {
+  const last = localStorage.getItem('mga:format');
   const dialog = document.createElement('dialog');
   dialog.className = 'format-picker';
   dialog.setAttribute('aria-labelledby', 'format-title');
@@ -131,13 +137,16 @@ function chooseFormat(industry, mode) {
     <div class="format-choices">${Object.entries(answerFormats).filter(([id]) => id !== 'reveal').map(([id, format]) => `
       <button class="format-choice" type="button" data-format="${id}">
         <span class="format-icon">${icon(id === 'typed' ? 'keyboard' : 'choices', 22)}</span>
-        <span><strong class="format-label">${esc(format.label)}</strong><small>${esc(format.description)}</small></span>
+        <span><strong class="format-label">${esc(format.label)}</strong><small>${esc(format.description)}${last === id ? ' · Last time' : ''}</small></span>
         ${icon('arrow', 17)}
       </button>`).join('')}</div><p class="status" role="status"></p>`;
   main.append(dialog);
   dialog.querySelector('.icon-button').addEventListener('click', () => dialog.close());
   dialog.querySelectorAll('[data-format]').forEach(el => {
-    el.addEventListener('click', action(el, () => startRound(industry, mode, el, el.dataset.format)));
+    el.addEventListener('click', action(el, () => {
+      try { localStorage.setItem('mga:format', el.dataset.format); } catch {}
+      return startRound(industry, mode, el, el.dataset.format, level);
+    }));
   });
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   dialog.showModal();
@@ -240,7 +249,7 @@ function showRound(round) {
   if (round.complete) {
     main.innerHTML = `<div class="shell play-shell"><a href="${back}" class="back-link">${icon('back', 18)} All games</a>
       <section class="results panel">
-        <p class="subtle">${esc(mode.name)}${round.level ? ` · Level ${round.level}` : ''}${reveal ? '' : typed ? ' · Typed answers' : ' · Multiple choice'}</p>
+        <p class="subtle">${esc(mode.name)}${round.level ? ` · Level ${round.level}` : ''}${photoGuess || typed ? ' · Typed answers' : reveal ? '' : ' · Picked answers'}</p>
         <h1 tabindex="-1" id="question-title">Round complete</h1>
         <div class="score">${round.score}<span> / 10</span></div>
         <p>${reveal ? (photoGuess ? `You named ${round.score} of 10${mode.scene ? ' movies' : ''}.` : `You recognised ${round.score} of 10.`) : `You got ${round.score} of 10 correct.`}</p>
@@ -251,13 +260,13 @@ function showRound(round) {
         <details class="review"><summary>Review your answers</summary><ol>${round.review.map(item => `<li><span class="${item.correct ? 'correct-text' : 'incorrect-text'}">${icon(item.correct ? 'check' : 'close', 18)}</span><div>${esc(item.answer)}${item.correct ? '' : `<small>Your answer: ${esc(item.picked)}</small>`}</div></li>`).join('')}</ol></details>
       </section></div>`;
     button('#replay', () => beginRound(round.industry, round.mode, main.querySelector('#replay')));
-    button('#next-level', () => startRound(round.industry, round.mode, main.querySelector('#next-level'), 'reveal', round.nextLevel));
+    button('#next-level', () => chooseFormat(round.industry, round.mode, round.nextLevel));
     button('#all-levels', async () => showLevels(await api('/catalog'), round.industry, round.mode));
     main.querySelector('#question-title').focus({ preventScroll: true });
     return;
   }
   const { question, feedback, position } = round;
-  const prompt = mode.prompt;
+  const prompt = round.mode === 'song' && !reveal ? 'Which song is this?' : mode.prompt;
   const clueRenderers = {
     image: () => `<figure class="clue clue-frame"><img src="${esc(question.media)}" alt="${esc(question.alt)}">${question.text ? `<figcaption>${esc(question.text)}</figcaption>` : ''}</figure>`,
     audio: () => `<div class="clue clue-audio">${cardArt('audio')}<audio aria-label="Movie audio clue" controls preload="none" src="${esc(question.media)}"></audio><details><summary>Read the audio clue</summary><p>${esc(question.alt)}</p></details></div>`,
@@ -309,6 +318,8 @@ function showRound(round) {
       ${round.starter && mode.clue === 'image' && !reveal ? `<p class="clue-credit">Illustrated ${round.mode === 'meme' ? 'meme' : 'scene'} recreation</p>` : ''}
       ${round.starter && round.mode === 'audio' ? '<p class="clue-credit">Original narrated clue</p>' : ''}
       ${answerControl}
+      ${feedback && !reveal && round.mode === 'song' && question.details ? `<div class="scene-card song-card"><h2>${esc(question.name)}</h2><p class="song-sub">${esc(d.movie ?? '')}${d.year ? ` · ${esc(d.year)}` : ''}</p><dl>${row('Music', d.composer)}${row('Singers', d.singers)}${row('Lyrics', d.lyricist)}</dl></div>` : ''}
+      ${feedback && !reveal && mode.scene && question.details?.dialogue ? `<div class="scene-card"><h2>${esc(question.name)}</h2><p class="scene-label">The dialogue</p><blockquote>${esc(d.dialogue)}</blockquote></div>` : ''}
       <p class="status" role="status"></p>
       ${feedback ? `<div class="answer-footer"><p class="${feedback.correct ? 'correct-text' : 'incorrect-text'}" role="status">${reveal ? (feedback.correct ? 'Nice! +1 point' : `It was ${esc(feedback.correctAnswer)}`) : feedback.correct ? 'Correct! +1 point' : `Correct answer: ${esc(feedback.correctAnswer)}`}</p><button type="button" id="next" class="btn primary">${position === 9 ? 'See score' : 'Next question'} ${icon('arrow', 18)}</button></div>` : ''}
     </section>

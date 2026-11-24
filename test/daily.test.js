@@ -78,8 +78,16 @@ test('API serves the same seven questions to everyone and reveals clues step by 
   assert.deepEqual(first.body.questions.map(item => item.type), Array.from({ length: 7 }, (_, i) => (i % 2 === 0 ? 'frame' : 'dialogue')));
   assert.equal(first.body.questions[0].clue.type, 'frame');
   assert.equal(first.body.questions[1].clue.type, 'line');
-  const text = JSON.stringify(first.body);
-  for (let q = 1; q <= 7; q++) assert.ok(!text.includes(`"${D.filmFor(TODAY, q).id}"`), 'the opening clues must not leak a film id');
+  // The clue itself never names the film. The only film ids in a question are its four answer choices, in a fixed shuffled order.
+  for (const item of first.body.questions) {
+    const secretId = D.filmFor(TODAY, item.q).id;
+    assert.ok(!JSON.stringify(item.clue).includes(`"${secretId}"`), 'the opening clue must not leak a film id');
+    assert.equal(item.options.length, 4);
+    assert.equal(new Set(item.options).size, 4);
+    assert.ok(item.options.includes(secretId), 'the right film is one of the four choices');
+    assert.deepEqual(item.options, D.optionsFor(TODAY, item.q));
+  }
+  assert.notDeepEqual(first.body.questions.map(item => item.options.indexOf(D.filmFor(TODAY, item.q).id)), Array(7).fill(0), 'the right answer is not always in the same place');
 
   const secret = D.filmFor(TODAY, 1);
   const wrong = D.films.find(f => f.id !== secret.id);

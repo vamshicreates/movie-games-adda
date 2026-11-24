@@ -20,7 +20,7 @@ export function originOf(req) {
   return `${proto}://${safe}`;
 }
 
-const playCopy = ['Daily Telugu Movie Quiz: Guess the Film from a Frame or Dialogue', 'A free daily Telugu movie quiz: seven questions, alternating a film frame and a famous dialogue. Type the film name, get a clue after every miss, share your score. New every day, no login.', 'Daily Telugu movie games', 'Seven questions a day, a frame then a dialogue, all from Telugu films. Type the film name. Free, no login, and your streak stays in your browser.'];
+const playCopy = ['Daily Telugu Movie Quiz: Guess the Film from a Frame or Dialogue', 'A free daily Telugu movie quiz: seven questions, alternating a film frame and a famous dialogue. Pick from four films or type the name, get a clue after every miss, share your score. New every day, no login.', 'Daily Telugu movie games', 'Seven questions a day, a frame then a dialogue, all from Telugu films. Pick the film or type it. Free, no login, and your streak stays in your browser.'];
 const playPath = /^\/play(?:\/(\d{1,4}))?$/;
 const legacyPlay = /^\/play\/(?:frame|dialogue|clues)(?:\/(\d{1,4}))?$/; // the three separate games were merged into one daily quiz
 
@@ -113,6 +113,8 @@ const pages = {
 <p class="lede">One daily Tollywood quiz. Seven questions, the same for everyone, new ones at midnight IST.</p>
 <h2>The seven questions</h2>
 <p>The questions alternate between a frame and a dialogue: four frames and three dialogues. For a frame you see one still from a Telugu film. For a dialogue you read a line from the film. Either way, type the name of the film. English or Telugu spelling both work, and the suggestions list helps.</p>
+<h2>Pick or type</h2>
+<p>Before you start, choose how to answer: pick the film from four options, or type its name with no options shown. The same choice appears in Guess the Actor, Guess the Actress, Guess the Movie by Frames and Guess the Song.</p>
 <h2>Guesses and hints</h2>
 <p>You have three guesses on every question. Each wrong guess unlocks a new clue: another frame or another line, and after that hints such as the genre, the year and the initials of the director and hero. Not sure? You can skip a question, but that uses a guess.</p>
 <h2>Your score</h2>
@@ -173,6 +175,10 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
     title: 'Updates and Changelog', desc: 'What is new on Movie Games Daily: the daily Telugu movie games, streaks, sharing, the archive and more.',
     body: `<h1>Updates</h1>
 <p class="lede">What is new on Movie Games Daily.</p>
+<h2>24 November 2026: Pick or type</h2>
+<ul>
+<li>Every game now lets you choose how to answer: pick from four options, or type it. Your choice starts the game that way.</li>
+</ul>
 <h2>24 November 2026: New name</h2>
 <ul>
 <li>Movie Games Adda is now Movie Games Daily, and the daily quiz is seven questions long.</li>

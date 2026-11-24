@@ -290,6 +290,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     const question = { id: questionId, text, alt, media };
     if (answerFormat === 'multiple') question.options = options;
     if (answerFormat === 'reveal' && (!modes[mode].typedGuess || answers[position])) { question.name = options[correct]; if (details) question.details = details; }
+    if (answerFormat !== 'reveal' && answers[position]) { question.name = options[correct]; if (details) question.details = details; } // song and scene details, once answered
     const answer = answers[position];
     const feedback = answer ? { ...answer, correctAnswer: options[correct] } : null;
     if (feedback && answerFormat === 'multiple') feedback.correctIndex = correct;
@@ -304,12 +305,19 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
     if (path.startsWith('/api/daily/') && (await daily.api(req, res, path, clock())) !== false) return;
     if (get && path === '/api/catalog') return json(res, catalog(player(req, res)));
     if (post && path === '/api/rounds') {
-      let { industry, mode, answerFormat = 'multiple', level } = await readJson(req);
+      const body = await readJson(req);
+      let { industry, mode, answerFormat = 'multiple', level } = body;
       need(typeof industry === 'string' && typeof mode === 'string' && Object.hasOwn(modes, mode), 400, 'Choose an industry and game.');
       need(typeof answerFormat === 'string' && Object.hasOwn(answerFormats, answerFormat), 400, 'Choose an answer format.');
       need(!(enforceSoon && modes[mode].soon), 409, 'This game is coming soon.');
       need(level === undefined || Number.isInteger(level), 400, 'Choose a level.');
-      if (modes[mode].reveal) answerFormat = 'reveal';
+      // Players choose "multiple" (pick one of four) or "typed" (type it). For the photo and scene games, typing is the
+      // original timed flow (stored as 'reveal'); for songs it is a plain typed answer. 'reveal' on its own is the
+      // old behaviour and is still understood.
+      if (modes[mode].reveal) {
+        if (body.answerFormat === undefined || answerFormat === 'reveal') answerFormat = 'reveal';
+        else if (answerFormat === 'typed') answerFormat = modes[mode].typedGuess ? 'reveal' : 'typed';
+      }
       need(answerFormat !== 'reveal' || modes[mode].reveal, 400, 'Choose an answer format.');
       const who = player(req, res);
       const id = transaction(() => {
@@ -385,7 +393,10 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
               const guess = field(rawGuess, 120);
               need(/[\p{L}\p{N}]/u.test(guess), 400, 'Type your answer before submitting.');
               const accepted = [question.options[question.correct], ...question.aliases].map(normalizeGuess);
-              answers.push({ guess, correct: accepted.includes(normalizeGuess(guess)) });
+              const all = JSON.parse(round.questions);
+              const everyone = all.map(item => item.options[item.correct]);
+              const alternates = Object.fromEntries(all.map(item => [item.options[item.correct], item.aliases ?? []]));
+              answers.push({ guess, correct: accepted.includes(normalizeGuess(guess)) || guessIsCorrect(guess, question.options[question.correct], everyone, alternates) });
             } else {
               need(Number.isInteger(picked) && picked >= 0 && picked < question.options.length, 400, 'Choose an answer.');
               answers.push({ picked, correct: picked === question.correct });

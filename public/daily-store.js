@@ -30,7 +30,15 @@ export function putDay(n, record) {
   data.days = { ...data.days, [n]: record };
   save();
 }
-export const newDay = questions => ({ live: false, items: questions.map(question => ({ status: 'open', guesses: [], clues: question.clue ? [question.clue] : [] })) });
+export const newDay = questions => ({ live: false, mode: null, items: questions.map(question => ({ status: 'open', guesses: [], clues: question.clue ? [question.clue] : [], options: question.options ?? [] })) });
+// How the player answers: 'pick' (four films to choose from) or 'type' (type the film name). The last choice is remembered.
+export const getMode = () => (data.prefs?.mode === 'pick' || data.prefs?.mode === 'type' ? data.prefs.mode : null);
+export function setMode(mode) {
+  data.prefs = { ...data.prefs, mode: mode === 'pick' ? 'pick' : 'type' };
+  save();
+}
+// A day started before the choice existed counts as typed; a day with no answers yet still asks.
+export const modeOf = record => record.mode ?? (answered(record) > 0 ? 'type' : null);
 export const isFinished = record => Boolean(record) && record.items.every(item => item.status !== 'open');
 export const answered = record => record.items.filter(item => item.status !== 'open').length;
 export const scoreOf = record => record.items.filter(item => item.status === 'won').length;
@@ -72,7 +80,7 @@ export function shareGrid(record) {
   const row = items => items.map(item => squares[grade(item)]).join('');
   return `${row(record.items.slice(0, 4))}\n${row(record.items.slice(4))}`;
 }
-export const shareText = (n, record, link) => `🎬 Movie Games Daily #${n} ${score(record)}\n${shareGrid(record)}\n${link}`;
+export const shareText = (n, record, link) => `🎬 Movie Games Daily #${n} ${score(record)}${modeOf(record) === 'type' ? ' ⌨️' : ''}\n${shareGrid(record)}\n${link}`;
 export const challengeLink = (origin, n, record) => `${origin}/play/${n}?s=${scoreOf(record)}`;
 export const challengeText = (n, record, link) => `🎬 I scored ${score(record)} on Daily Telugu movie quiz #${n}. Can you beat me?\n${link}`;
 // "?s=7" from a friend's link, only valid between 0 and the number of questions.

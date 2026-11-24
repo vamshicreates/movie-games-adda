@@ -91,6 +91,23 @@ export function clueAt(n, q, stage) {
 }
 export const openingClue = (n, q) => clueAt(n, q, 0);
 
+// Four film choices for the "pick the answer" mode: the right film plus three similar ones (same genre, language
+// or era), chosen and ordered by a hash of the day and question so everyone sees the same four in the same order.
+const hashOf = text => {
+  let h = 2166136261;
+  for (const ch of text) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+};
+export function optionsFor(n, q) {
+  const secret = filmFor(n, q);
+  const closeness = film => (film.genres.some(genre => secret.genres.includes(genre)) ? 2 : 0) + (film.lang === secret.lang ? 1 : 0) + (Math.abs(film.year - secret.year) <= 6 ? 1 : 0);
+  const similar = films.filter(film => film.id !== secret.id)
+    .map(film => ({ film, close: closeness(film), key: hashOf(`${n}:${q}:${film.id}`) }))
+    .sort((a, b) => b.close - a.close || a.key - b.key).slice(0, 8)
+    .sort((a, b) => a.key - b.key).slice(0, 3).map(item => item.film);
+  return [secret, ...similar].map(film => ({ film, key: hashOf(`${n}:${q}:order:${film.id}`) })).sort((a, b) => a.key - b.key).map(item => item.film.id);
+}
+
 // ----- turning typed text into a film -----
 const plain = value => value.normalize('NFKC').toLowerCase().replace(/[\s‌‍]+/g, ' ').trim();
 const letters = value => plain(value).replace(/[^\p{L}\p{N}\p{M}]/gu, '');
@@ -155,7 +172,7 @@ export function createDaily({ db, readJson, RequestError, json }) {
     }
     if (get && path === '/api/daily/puzzle') {
       const { n, today } = dayParam(url, now);
-      const questions = Array.from({ length: QUESTIONS }, (_, i) => ({ q: i + 1, type: typeOf(i + 1), clue: openingClue(n, i + 1) }));
+      const questions = Array.from({ length: QUESTIONS }, (_, i) => ({ q: i + 1, type: typeOf(i + 1), clue: openingClue(n, i + 1), options: optionsFor(n, i + 1) }));
       return json(res, { n, date: dateOf(n), today, isToday: n === today, tries: TRIES, questions });
     }
     if (get && path === '/api/daily/frame') {

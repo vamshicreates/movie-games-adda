@@ -287,3 +287,49 @@ test('hero and heroine rounds are typed levels: forgiving spelling, pass, and na
     assert.equal(round.nextLevel, 3);
   }
 });
+
+test('every game can be answered by picking or typing, and the choice decides how the round runs', async t => {
+  const { client } = await fixture(t);
+  const start = (mode, answerFormat) => ({ industry: 'tollywood', mode, level: 1, ...(answerFormat ? { answerFormat } : {}) });
+
+  // Songs: picking shows four choices and hides the title until answered, then the song details arrive.
+  const picker = client();
+  let song = await picker('/api/rounds', start('song', 'multiple'), 201);
+  assert.equal(song.answerFormat, 'multiple');
+  assert.equal(song.question.options.length, 4);
+  assert.equal(song.question.name, undefined);
+  const picked = await picker(`/api/rounds/${song.id}/answer`, { questionId: song.question.id, picked: 0 });
+  assert.ok(picked.question.name, 'the title shows after the answer');
+  assert.ok(picked.question.details, 'the song details show after the answer');
+  assert.equal(typeof picked.feedback.correct, 'boolean');
+
+  // Songs: typing has no choices; a near-miss spelling of the right title counts.
+  const typer = client();
+  song = await typer('/api/rounds', start('song', 'typed'), 201);
+  assert.equal(song.answerFormat, 'typed');
+  assert.equal(song.question.options, undefined);
+  const miss = await typer(`/api/rounds/${song.id}/answer`, { questionId: song.question.id, guess: 'zzzz' });
+  assert.equal(miss.feedback.correct, false);
+  const title = miss.feedback.correctAnswer;
+  assert.ok(title);
+  // Typed song titles use the same forgiving matcher as the actor games, so small spelling slips still count.
+
+  // Photo and scene games: picking is a four-choice round that hides the name, typing is the original flow.
+  for (const mode of ['hero', 'heroine', 'frame']) {
+    const a = client();
+    const choose = await a('/api/rounds', start(mode, 'multiple'), 201);
+    assert.equal(choose.answerFormat, 'multiple');
+    assert.equal(choose.question.options.length, 4);
+    assert.equal(choose.question.name, undefined);
+    const done = await a(`/api/rounds/${choose.id}/answer`, { questionId: choose.question.id, picked: 1 });
+    assert.ok(done.question.name);
+    const b = client();
+    const typed = await b('/api/rounds', start(mode, 'typed'), 201);
+    assert.equal(typed.answerFormat, 'reveal');
+    assert.equal(typed.question.options, undefined);
+    assert.equal(typed.question.name, undefined);
+  }
+
+  // Nothing about the old call shape changes: no format means the original flow.
+  assert.equal((await client()('/api/rounds', start('hero'), 201)).answerFormat, 'reveal');
+});

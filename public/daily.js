@@ -177,7 +177,7 @@ async function gamePage(n) {
     <div class="game-top"><p class="eyebrow">${isToday ? 'Today' : 'Archive'} · #${n} · ${dateLabel(n)}</p>
       <div class="daily-tools">${langControl()}<button type="button" class="btn secondary small" data-stats>${icon('trophy', 18)} Stats</button></div></div>
     <header class="game-head"><h1 tabindex="-1">Daily Telugu movie games</h1>
-      <p class="lede">Seven questions, a frame then a dialogue, all from Telugu films. Type the film name. You get ${tries} guesses on each, with a new clue after every miss.</p></header>
+      <p class="lede">Seven questions, a frame then a dialogue, all from Telugu films. Pick the film or type it. You get ${tries} guesses on each, with a new clue after every miss.</p></header>
     <div id="friend"></div><ol class="q-strip" id="strip" aria-label="Your progress"></ol><section id="stage"></section>
     <details class="archive" id="archive"><summary>Archive: the last ${meta.today - meta.from + 1} days</summary><div class="archive-grid" id="archive-grid"></div></details>
     <p class="game-foot"><button type="button" class="link-button" data-suggest>Suggest a film</button> <span aria-hidden="true">·</span> <a href="/how-to-play">How to play</a> <span aria-hidden="true">·</span> <a href="/">More games</a></p></div>`;
@@ -194,7 +194,7 @@ async function gamePage(n) {
   }
 
   function renderStrip() {
-    const current = reviewing === null ? firstOpen() : -1;
+    const current = reviewing === null && answerMode() ? firstOpen() : -1;
     $('#strip').innerHTML = record.items.map((item, i) => {
       const state = S.grade(item);
       const mark = state === 'first' || state === 'later' ? '✓' : state === 'miss' ? '✕' : i + 1;
@@ -212,26 +212,118 @@ async function gamePage(n) {
     }).reverse().join('');
   }
 
+  const letters = ['A', 'B', 'C', 'D'];
+  const answerMode = () => S.modeOf(record);
+
+  function renderChooser() {
+    const last = S.getMode();
+    const choice = (id, art, title, text) => `<button type="button" class="mode-choice" data-mode="${id}">
+      <span class="mode-icon">${icon(art, 22)}</span><span><strong>${title}</strong><small>${text}</small></span>${last === id ? '<em class="mode-last">Last time</em>' : ''}${icon('arrow', 17)}</button>`;
+    $('#stage').innerHTML = `<div class="mode-picker"><h2 id="mode-title" tabindex="-1">How do you want to answer?</h2>
+      <p class="q-ask">Pick one to start today's ${S.QUESTIONS} questions. Your choice stays for the whole quiz.</p>
+      <div class="mode-choices">${choice('pick', 'choices', 'Pick the answer', 'Four films to choose from on every question.')}${choice('type', 'keyboard', 'Type the answer', 'No options. Type the film name, in English or Telugu.')}</div>
+      <p class="status" id="mode-status" role="status"></p></div>`;
+    $('#stage').querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', async () => {
+      const chosen = button.dataset.mode;
+      try {
+        if (chosen === 'pick' && record.items.some(item => !item.options?.length)) {
+          const fresh = await request(`/api/daily/puzzle?n=${n}`); // a day saved before the picker existed has no choices yet
+          fresh.questions.forEach((question, i) => { record.items[i].options = question.options; });
+        }
+      } catch (error) {
+        $('#mode-status').className = 'status error';
+        $('#mode-status').textContent = error.message;
+        return;
+      }
+      record.mode = chosen;
+      S.setMode(chosen);
+      save();
+      renderAll();
+      ($('#g-input') ?? $('#q-title'))?.focus();
+    }));
+  }
+
   function renderQuestion(index) {
     const item = record.items[index];
     const kind = typeOf(index);
+    const picking = answerMode() === 'pick';
     const pips = Array.from({ length: tries }, (_, i) => {
       const guess = item.guesses[i];
       return guess ? '<span class="pip wrong" aria-label="wrong">✕</span>' : '<span class="pip"></span>';
     }).join('');
     const wrong = item.guesses.filter(guess => !guess.skipped);
-    $('#stage').innerHTML = `<div class="q-meta"><h2 id="q-title" tabindex="-1">Question ${index + 1} of ${S.QUESTIONS}</h2><span class="q-kind">${kind === 'frame' ? icon('frame', 16) : icon('lyric', 16)} ${TYPE_LABEL[kind]}</span></div>
-      <p class="q-ask">${kind === 'frame' ? 'Which Telugu film is this frame from?' : 'Which Telugu film is this dialogue from?'}</p>
-      <div class="clue-stack">${clueCards(item, true)}</div>
-      <div class="pips" role="img" aria-label="${item.guesses.length} of ${tries} guesses used">${pips}</div>${wrong.length ? `<ul class="wrong-list">${wrong.map(guess => `<li>${esc(shownTitle(guess))}</li>`).join('')}</ul>` : ''}
-      <form class="guess-form" autocomplete="off" novalidate>
+    const entry = picking
+      ? `<div class="options pick-options" role="group" aria-label="Choose the film">${item.options.map((id, i) => {
+        const film = filmMap.get(id);
+        const missed = item.guesses.some(guess => guess.id === id);
+        return `<button type="button" class="option${missed ? ' option-wrong' : ''}" data-pick="${esc(id)}"${missed ? ' disabled' : ''}><span class="option-letter">${letters[i]}</span><span>${esc(film ? titleOf(film) : id)}${film && otherTitle(film) ? `<small ${lang === 'te' ? '' : 'lang="te"'}>${esc(otherTitle(film))}</small>` : ''}</span>${missed ? icon('close', 19) : ''}</button>`;
+      }).join('')}</div>
+        <div class="guess-meta"><button class="btn secondary small" type="button" data-skip>Skip question</button><p class="guess-count">Guess ${item.guesses.length + 1} of ${tries}. A wrong pick uses a guess.</p></div>
+        <p class="status" id="g-status" role="status"></p>`
+      : `<form class="guess-form" autocomplete="off" novalidate>
         <label class="sr-only" for="g-input">Film name</label>
         <div class="guess-line"><div class="combo"><input id="g-input" type="text" role="combobox" aria-expanded="false" aria-controls="g-list" aria-autocomplete="list" placeholder="Type a film name…" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
           <ul id="g-list" class="combo-list" role="listbox" hidden></ul></div>
           <button class="btn primary" type="submit">Guess</button></div>
         <div class="guess-meta"><button class="btn secondary small" type="button" data-skip>Skip question</button><p class="guess-count">Guess ${item.guesses.length + 1} of ${tries}. Skipping uses a guess.</p></div>
         <p class="status" id="g-status" role="status"></p></form>`;
-    bindForm($('#stage'), index);
+    $('#stage').innerHTML = `<div class="q-meta"><h2 id="q-title" tabindex="-1">Question ${index + 1} of ${S.QUESTIONS}</h2><span class="q-kind">${kind === 'frame' ? icon('frame', 16) : icon('lyric', 16)} ${TYPE_LABEL[kind]}</span></div>
+      <p class="q-ask">${kind === 'frame' ? 'Which Telugu film is this frame from?' : 'Which Telugu film is this dialogue from?'}</p>
+      <div class="clue-stack">${clueCards(item, true)}</div>
+      <div class="pips" role="img" aria-label="${item.guesses.length} of ${tries} guesses used">${pips}</div>${!picking && wrong.length ? `<ul class="wrong-list">${wrong.map(guess => `<li>${esc(shownTitle(guess))}</li>`).join('')}</ul>` : ''}
+      ${entry}`;
+    if (picking) bindPick($('#stage'), index);
+    else bindForm($('#stage'), index);
+  }
+
+  // One guess goes to the server here, whichever way it was entered. `ui` has the status line, a way to lock the
+  // controls while waiting, and the text typed (for the "not in our list" message).
+  let busy = false;
+  async function answerQuestion(index, extra, ui) {
+    if (busy) return;
+    busy = true;
+    const item = record.items[index];
+    ui.lock(true);
+    ui.status.className = 'status';
+    ui.status.textContent = '';
+    try {
+      const res = await request('/api/daily/guess', { n, q: index + 1, misses: item.guesses.length, ...extra });
+      if (res.unknown) {
+        ui.status.className = 'status error';
+        ui.status.innerHTML = `We could not find “${esc(ui.typed())}” in our list. Pick a film from the suggestions, or <button type="button" class="link-button" data-unknown>suggest it</button>.`;
+        $('[data-unknown]', ui.status).addEventListener('click', () => suggestDialog(ui.typed()));
+        return;
+      }
+      if (res.guessed && item.guesses.some(guess => guess.id === res.guessed.id)) {
+        ui.status.className = 'status error';
+        ui.status.textContent = 'You already guessed that one.';
+        return;
+      }
+      item.guesses.push(res.guessed ? { id: res.guessed.id, title: res.guessed.title } : { skipped: true });
+      if (res.clue) item.clues.push(res.clue);
+      if (res.correct || res.over) {
+        item.status = res.correct ? 'won' : 'lost';
+        item.answer = res.answer;
+        reviewing = index;
+        if (S.isFinished(record)) record.live = isToday;
+      }
+      save();
+      renderAll();
+      if (reviewing !== null) $('#fb-title')?.focus(); else ($('#g-input') ?? $('#q-title'))?.focus();
+    } catch (error) {
+      ui.status.className = 'status error';
+      ui.status.textContent = error.message;
+    } finally {
+      busy = false;
+      ui.lock(false);
+    }
+  }
+
+  function bindPick(box, index) {
+    const status = $('#g-status', box);
+    const ui = { status, typed: () => '', lock: locked => box.querySelectorAll('button').forEach(button => { if (locked) button.disabled = true; else if (!button.classList.contains('option-wrong')) button.disabled = false; }) };
+    box.querySelectorAll('[data-pick]').forEach(button => button.addEventListener('click', () => answerQuestion(index, { film: button.dataset.pick }, ui)));
+    $('[data-skip]', box).addEventListener('click', () => answerQuestion(index, { skip: true }, ui));
   }
 
   function bindForm(box, index) {
@@ -282,52 +374,14 @@ async function gamePage(n) {
       if (entry) pick(filmMap.get(entry.dataset.id));
     });
 
-    let busy = false;
-    async function send(extra) {
-      if (busy) return;
-      busy = true;
-      form.querySelectorAll('button').forEach(button => { button.disabled = true; });
-      status.className = 'status';
-      status.textContent = '';
-      try {
-        const res = await request('/api/daily/guess', { n, q: index + 1, misses: item.guesses.length, ...extra });
-        if (res.unknown) {
-          status.className = 'status error';
-          status.innerHTML = `We could not find “${esc(input.value.trim())}” in our list. Pick a film from the suggestions, or <button type="button" class="link-button" data-unknown>suggest it</button>.`;
-          $('[data-unknown]', status).addEventListener('click', () => suggestDialog(input.value.trim()));
-          return;
-        }
-        if (res.guessed && guessedIds().has(res.guessed.id)) {
-          status.className = 'status error';
-          status.textContent = 'You already guessed that one.';
-          return;
-        }
-        item.guesses.push(res.guessed ? { id: res.guessed.id, title: res.guessed.title } : { skipped: true });
-        if (res.clue) item.clues.push(res.clue);
-        if (res.correct || res.over) {
-          item.status = res.correct ? 'won' : 'lost';
-          item.answer = res.answer;
-          reviewing = index;
-          if (S.isFinished(record)) record.live = isToday;
-        }
-        save();
-        renderAll();
-        if (reviewing !== null) $('#fb-title')?.focus(); else $('#g-input')?.focus();
-      } catch (error) {
-        status.className = 'status error';
-        status.textContent = error.message;
-      } finally {
-        busy = false;
-        form.querySelectorAll('button').forEach(button => { button.disabled = false; });
-      }
-    }
+    const ui = { status, typed: () => input.value.trim(), lock: locked => form.querySelectorAll('button').forEach(button => { button.disabled = locked; }) };
     form.addEventListener('submit', event => {
       event.preventDefault();
       const text = input.value.trim();
       if (!text) { status.className = 'status error'; status.textContent = 'Type a film name, or pick one from the list.'; return; }
-      send(input.dataset.film ? { film: input.dataset.film } : { guess: text });
+      answerQuestion(index, input.dataset.film ? { film: input.dataset.film } : { guess: text }, ui);
     });
-    $('[data-skip]', form).addEventListener('click', () => send({ skip: true }));
+    $('[data-skip]', form).addEventListener('click', () => answerQuestion(index, { skip: true }, ui));
   }
 
   const answerCard = item => {
@@ -369,6 +423,7 @@ async function gamePage(n) {
       return `<li class="rv-${state}"><span class="rv-n">${i + 1}</span><span class="rv-mark" aria-label="${GRADE_LABEL[state]}">${state === 'miss' ? '✕' : '✓'}</span><span class="rv-title">${esc(film ? titleOf(film) : item.answer?.title ?? '')}</span><span class="rv-kind">${TYPE_LABEL[typeOf(i)]}</span></li>`;
     }).join('');
     $('#stage').innerHTML = `<div class="result"><h2 id="r-title" tabindex="-1">${heading}</h2>
+      <p class="mode-tag"><span class="q-kind">${answerMode() === 'type' ? `${icon('keyboard', 16)} Typed answers` : `${icon('choices', 16)} Picked answers`}</span></p>
       <p class="score-big"><strong>${mine}</strong><span>/ ${S.QUESTIONS}</span></p>
       <pre class="share-preview" aria-label="Your result">${esc(text)}</pre>
       <div class="share-row"><button type="button" class="btn primary" data-copy="result">Copy result</button>
@@ -405,6 +460,7 @@ async function gamePage(n) {
     renderStrip();
     if (reviewing !== null) renderFeedback(reviewing);
     else if (S.isFinished(record)) renderResult();
+    else if (!answerMode()) renderChooser();
     else renderQuestion(firstOpen());
     renderArchive();
   }

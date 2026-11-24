@@ -46,3 +46,7 @@ The 24 levels come from `images_with_dialogues/` (collages of two to six frames 
 - **Sharing.** The score grid uses 🟩 (first guess), 🟨 (later guess) and 🟥 (missed), four on the first row, three on the second. Challenge links look like `/play/31?s=5`.
 - **Suggest a film.** `POST /api/daily/suggest` stores suggestions in SQLite (temporary on Vercel) and also writes them to the server log as `[film-suggestion]`, which is the durable copy there. Signed-in admins can read them at `/api/admin/suggestions`.
 - **Pages and SEO.** `site.js` renders the information pages (how to play with FAQ, privacy, terms, contact, updates, credits), per-game titles, descriptions and canonical URLs, Open Graph and Twitter tags, `robots.txt` and `sitemap.xml`. Set `SITE_URL` to pin the public address; otherwise it is read from the request. `tools/make-og.py` rebuilds `public/og.png` (1200×630).
+
+## Pick or type
+
+Every game starts with a choice: pick from four options or type the answer. The daily quiz remembers the last choice (`prefs.mode` in `mga:v2`) and the level games remember it as `mga:format`. Daily questions carry four film choices chosen by a hash of the day and question, so everyone sees the same four in the same order; the clue itself never names the film.

@@ -186,3 +186,21 @@
   .q-strip { gap: 4px; }
   .q-dot { height: 30px; font-size: .75rem; }
 }
+
+/* Choosing how to answer, and the pick-the-film options */
+.mode-picker { margin-top: 4px; padding: 20px; border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline); }
+.mode-picker h2 { font-family: var(--display); font-size: 1.5rem; letter-spacing: -.02em; }
+.mode-choices { display: grid; gap: 10px; margin-top: 16px; }
+.mode-choice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 14px; text-align: left; border: 0; border-radius: 12px; background: var(--raised); color: var(--text); box-shadow: 0 0 0 1px var(--hairline-strong); }
+.mode-choice:hover, .mode-choice:focus-visible { box-shadow: 0 0 0 1px var(--red-ink); }
+.mode-choice:active { transform: scale(.985); }
+.mode-choice strong { display: block; font-size: 1.0625rem; }
+.mode-choice small { display: block; margin-top: 2px; color: var(--muted); line-height: 1.35; }
+.mode-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: rgb(237 41 62 / .14); color: var(--red-ink); }
+.mode-last { padding: 2px 8px; border-radius: 99px; background: var(--raised-hover); color: var(--text-2); font-size: .75rem; font-style: normal; font-weight: 600; }
+.mode-tag { margin: 8px 0 0; }
+.pick-options { margin-top: 18px; }
+.pick-options .option { text-align: left; }
+.pick-options .option small { display: block; color: var(--muted); font-size: .8125rem; font-weight: 400; }
+.pick-options .option > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .pick-options { grid-template-columns: 1fr; } }
