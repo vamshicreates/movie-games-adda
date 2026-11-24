@@ -1,7 +1,7 @@
 // Browser-side memory for the daily game: results, streaks, stats and the language choice.
 // Everything lives in localStorage under one key; if storage is blocked the game still works for the visit.
 const KEY = 'mga:v2';
-export const QUESTIONS = 10;
+export const QUESTIONS = 7;
 export const TRIES = 3;
 
 const blank = () => ({ prefs: {}, days: {} });
@@ -70,7 +70,7 @@ const squares = { first: '🟩', later: '🟨', miss: '🟥', open: '⬜' };
 export const score = record => `${scoreOf(record)}/${QUESTIONS}`;
 export function shareGrid(record) {
   const row = items => items.map(item => squares[grade(item)]).join('');
-  return `${row(record.items.slice(0, 5))}\n${row(record.items.slice(5))}`;
+  return `${row(record.items.slice(0, 4))}\n${row(record.items.slice(4))}`;
 }
 export const shareText = (n, record, link) => `🎬 Movie Games Adda · Daily #${n} ${score(record)}\n${shareGrid(record)}\n${link}`;
 export const challengeLink = (origin, n, record) => `${origin}/play/${n}?s=${scoreOf(record)}`;

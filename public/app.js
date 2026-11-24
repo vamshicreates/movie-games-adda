@@ -187,7 +187,7 @@ function home(data) {
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <h1 id="hero-title">Daily Telugu<br>movie games.</h1>
-        <p>Ten questions a day, a film frame then a dialogue, all from Telugu cinema. The same quiz for everyone, fresh at midnight. Share your score and keep your streak.</p>
+        <p>Seven questions a day, a film frame then a dialogue, all from Telugu cinema. The same quiz for everyone, fresh at midnight. Share your score and keep your streak.</p>
         <div class="hero-actions"><a class="btn primary" href="/play">Play today ${icon('arrow', 18)}</a><a class="btn secondary" href="#games">More games</a></div>
       </div>
     </section>

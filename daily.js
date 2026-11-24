@@ -13,7 +13,7 @@ const mediaDir = resolve(root, 'public/media/daily');
 
 export const EPOCH = '2026-10-16'; // puzzle #1
 export const ARCHIVE_DAYS = 30;
-export const QUESTIONS = 10; // one daily game: ten questions, alternating frame and dialogue
+export const QUESTIONS = 7; // one daily game: seven questions, alternating frame and dialogue (four frames, three dialogues)
 export const TRIES = 3; // typed guesses per question
 export const typeOf = q => (q % 2 === 1 ? 'frame' : 'dialogue');
 
@@ -51,7 +51,7 @@ function permutation(size) {
   return order;
 }
 const order = permutation(films.length);
-// Ten consecutive films from the shuffled list per day, so a day never repeats a film (the list has 95).
+// Seven consecutive films from the shuffled list per day, so a day never repeats a film (the list has 95).
 export function filmFor(n, q) {
   return films[order[((n - 1) * QUESTIONS + (q - 1)) % films.length]];
 }

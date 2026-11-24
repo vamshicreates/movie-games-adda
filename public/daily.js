@@ -1,4 +1,4 @@
-// The daily Telugu movie quiz: ten questions a day, alternating a film frame and a dialogue, answered by typing.
+// The daily Telugu movie quiz: seven questions a day, alternating a film frame and a dialogue, answered by typing.
 // Results, streaks and stats are kept in the browser; the server only holds the puzzles and checks guesses.
 import { icon } from './art.js';
 import * as S from './daily-store.js';
@@ -177,7 +177,7 @@ async function gamePage(n) {
     <div class="game-top"><p class="eyebrow">${isToday ? 'Today' : 'Archive'} · #${n} · ${dateLabel(n)}</p>
       <div class="daily-tools">${langControl()}<button type="button" class="btn secondary small" data-stats>${icon('trophy', 18)} Stats</button></div></div>
     <header class="game-head"><h1 tabindex="-1">Daily Telugu movie games</h1>
-      <p class="lede">Ten questions, a frame then a dialogue, all from Telugu films. Type the film name. You get ${tries} guesses on each, with a new clue after every miss.</p></header>
+      <p class="lede">Seven questions, a frame then a dialogue, all from Telugu films. Type the film name. You get ${tries} guesses on each, with a new clue after every miss.</p></header>
     <div id="friend"></div><ol class="q-strip" id="strip" aria-label="Your progress"></ol><section id="stage"></section>
     <details class="archive" id="archive"><summary>Archive: the last ${meta.today - meta.from + 1} days</summary><div class="archive-grid" id="archive-grid"></div></details>
     <p class="game-foot"><button type="button" class="link-button" data-suggest>Suggest a film</button> <span aria-hidden="true">·</span> <a href="/how-to-play">How to play</a> <span aria-hidden="true">·</span> <a href="/">More games</a></p></div>`;
@@ -362,7 +362,7 @@ async function gamePage(n) {
     const text = S.shareText(n, record, link);
     const challenge = S.challengeText(n, record, S.challengeLink(location.origin, n, record));
     const stat = S.stats(meta.today);
-    const heading = mine === S.QUESTIONS ? 'Perfect score!' : mine >= 7 ? 'Great run!' : mine >= 4 ? 'Not bad!' : 'Tough day.';
+    const heading = mine === S.QUESTIONS ? 'Perfect score!' : mine >= 5 ? 'Great run!' : mine >= 3 ? 'Not bad!' : 'Tough day.';
     const review = record.items.map((item, i) => {
       const state = S.grade(item);
       const film = filmMap.get(item.answer?.id);
@@ -376,7 +376,7 @@ async function gamePage(n) {
         <a class="btn secondary" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}">Post on X</a>
         ${navigator.share ? '<button type="button" class="btn secondary" data-share>Share…</button>' : ''}
         <button type="button" class="btn secondary" data-copy="challenge">${icon('trophy', 18)} Challenge a friend</button></div>
-      <h3 class="rv-head">The ten films</h3><ol class="review">${review}</ol>
+      <h3 class="rv-head">The seven films</h3><ol class="review">${review}</ol>
       <div class="stat-grid mini"><div><strong>${stat.played}</strong><span>Days played</span></div><div><strong>${stat.average}</strong><span>Average</span></div><div><strong>${stat.current}</strong><span>Streak</span></div><div><strong>${stat.best}</strong><span>Best score</span></div></div>
       ${isToday ? '<p class="next-line">New questions in <time id="count">--:--:--</time> (midnight IST)</p>' : '<p class="next-line"><a href="/play">Play today\'s quiz</a></p>'}
       <div class="more-games"><a class="btn secondary small" href="/">More games</a><button type="button" class="btn secondary small" data-suggest>Suggest a film</button></div></div>`;

@@ -30,7 +30,7 @@ test('puzzle numbers follow the IST day, not UTC', () => {
   assert.equal(D.firstArchive(NOW), TODAY - D.ARCHIVE_DAYS + 1);
 });
 
-test('every day has ten different films, and every film gets used across the cycle', () => {
+test('every day has seven different films, and every film gets used across the cycle', () => {
   for (let n = 1; n <= 40; n++) assert.equal(new Set(Array.from({ length: D.QUESTIONS }, (_, i) => D.filmFor(n, i + 1).id)).size, D.QUESTIONS, `day ${n}`);
   const seen = new Set();
   for (let n = 1; n <= Math.ceil(D.films.length / D.QUESTIONS); n++) for (let q = 1; q <= D.QUESTIONS; q++) seen.add(D.filmFor(n, q).id);
@@ -65,21 +65,21 @@ test('typed names match English, Telugu, aliases and spelling variants, and reje
   assert.equal(D.matchFilm(''), null);
 });
 
-test('API serves the same ten questions to everyone and reveals clues step by step', async t => {
+test('API serves the same seven questions to everyone and reveals clues step by step', async t => {
   const { call } = await fixture(t);
   const meta = (await call('/api/daily/meta')).body;
   assert.equal(meta.today, TODAY);
-  assert.equal(meta.questions, 10);
+  assert.equal(meta.questions, 7);
   assert.equal(meta.tries, 3);
   const first = await call(`/api/daily/puzzle?n=${TODAY}`);
   const again = await call('/api/daily/puzzle');
   assert.deepEqual(first.body, again.body);
-  assert.equal(first.body.questions.length, 10);
-  assert.deepEqual(first.body.questions.map(item => item.type), Array.from({ length: 10 }, (_, i) => (i % 2 === 0 ? 'frame' : 'dialogue')));
+  assert.equal(first.body.questions.length, 7);
+  assert.deepEqual(first.body.questions.map(item => item.type), Array.from({ length: 7 }, (_, i) => (i % 2 === 0 ? 'frame' : 'dialogue')));
   assert.equal(first.body.questions[0].clue.type, 'frame');
   assert.equal(first.body.questions[1].clue.type, 'line');
   const text = JSON.stringify(first.body);
-  for (let q = 1; q <= 10; q++) assert.ok(!text.includes(`"${D.filmFor(TODAY, q).id}"`), 'the opening clues must not leak a film id');
+  for (let q = 1; q <= 7; q++) assert.ok(!text.includes(`"${D.filmFor(TODAY, q).id}"`), 'the opening clues must not leak a film id');
 
   const secret = D.filmFor(TODAY, 1);
   const wrong = D.films.find(f => f.id !== secret.id);
@@ -193,42 +193,42 @@ test('pages, SEO tags, robots and sitemap', async t => {
 });
 
 const day = (...grades) => ({ live: true, items: grades.map(grade => ({ status: grade === 'miss' ? 'lost' : grade === 'open' ? 'open' : 'won', guesses: grade === 'first' ? [{ id: 'a' }] : [{ id: 'a' }, { id: 'b' }] })) });
-const ten = (wins, misses = 10 - wins) => [...Array(wins).fill('first'), ...Array(misses).fill('miss')];
+const full = (wins, misses = 7 - wins) => [...Array(wins).fill('first'), ...Array(misses).fill('miss')];
 
 test('streaks count only days finished on their own day, and stats follow the scores', () => {
   S.reset();
-  S.putDay(28, day(...ten(8)));
-  S.putDay(29, day(...ten(6)));
-  S.putDay(30, { ...day(...ten(9)), live: false }); // played late from the archive
+  S.putDay(28, day(...full(6)));
+  S.putDay(29, day(...full(5)));
+  S.putDay(30, { ...day(...full(7)), live: false }); // played late from the archive
   let stat = S.stats(31);
   assert.equal(stat.current, 0);
   assert.equal(stat.longest, 2);
   assert.equal(stat.played, 3);
-  assert.equal(stat.best, 9);
-  assert.equal(stat.average, 7.7);
-  assert.equal(stat.distribution[6] + stat.distribution[8] + stat.distribution[9], 3);
-  S.putDay(30, day(...ten(9)));
+  assert.equal(stat.best, 7);
+  assert.equal(stat.average, 6);
+  assert.equal(stat.distribution[5] + stat.distribution[6] + stat.distribution[7], 3);
+  S.putDay(30, day(...full(7)));
   assert.equal(S.stats(31).current, 3, 'yesterday still counts while today is open');
   S.putDay(31, day('first', 'miss', 'open'));
   assert.equal(S.stats(31).current, 3, 'an unfinished day is not played yet');
-  S.putDay(31, day(...ten(5)));
+  S.putDay(31, day(...full(4)));
   assert.equal(S.stats(31).current, 4);
-  S.putDay(27, day(...ten(1)));
+  S.putDay(27, day(...full(1)));
   assert.equal(S.stats(31).longest, 5);
 });
 
 test('share text hides the answers and challenge links carry the score', () => {
-  const record = day('first', 'later', 'miss', 'first', 'first', 'miss', 'miss', 'later', 'first', 'first');
-  assert.equal(S.scoreOf(record), 7);
-  assert.equal(S.score(record), '7/10');
-  assert.equal(S.shareGrid(record), '🟩🟨🟥🟩🟩\n🟥🟥🟨🟩🟩');
+  const record = day('first', 'later', 'miss', 'first', 'first', 'miss', 'miss');
+  assert.equal(S.scoreOf(record), 4);
+  assert.equal(S.score(record), '4/7');
+  assert.equal(S.shareGrid(record), '🟩🟨🟥🟩\n🟩🟥🟥');
   const text = S.shareText(31, record, 'https://x.test/play');
-  assert.match(text, /Daily #31 7\/10/);
-  assert.equal(S.challengeLink('https://x.test', 31, record), 'https://x.test/play/31?s=7');
-  assert.equal(S.friendScore('?s=7'), 7);
+  assert.match(text, /Daily #31 4\/7/);
+  assert.equal(S.challengeLink('https://x.test', 31, record), 'https://x.test/play/31?s=4');
+  assert.equal(S.friendScore('?s=4'), 4);
   assert.equal(S.friendScore('?s=0'), 0);
-  assert.equal(S.friendScore('?s=10'), 10);
-  assert.equal(S.friendScore('?s=11'), null);
+  assert.equal(S.friendScore('?s=7'), 7);
+  assert.equal(S.friendScore('?s=8'), null);
   assert.equal(S.friendScore('?s=abc'), null);
   assert.equal(S.friendScore(''), null);
   assert.equal(S.isFinished(day('first', 'open')), false);

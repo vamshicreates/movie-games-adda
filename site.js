@@ -20,7 +20,7 @@ export function originOf(req) {
   return `${proto}://${safe}`;
 }
 
-const playCopy = ['Daily Telugu Movie Quiz: Guess the Film from a Frame or Dialogue', 'A free daily Telugu movie quiz: ten questions, alternating a film frame and a famous dialogue. Type the film name, get a clue after every miss, share your score. New every day, no login.', 'Daily Telugu movie games', 'Ten questions a day, a frame then a dialogue, all from Telugu films. Type the film name. Free, no login, and your streak stays in your browser.'];
+const playCopy = ['Daily Telugu Movie Quiz: Guess the Film from a Frame or Dialogue', 'A free daily Telugu movie quiz: seven questions, alternating a film frame and a famous dialogue. Type the film name, get a clue after every miss, share your score. New every day, no login.', 'Daily Telugu movie games', 'Seven questions a day, a frame then a dialogue, all from Telugu films. Type the film name. Free, no login, and your streak stays in your browser.'];
 const playPath = /^\/play(?:\/(\d{1,4}))?$/;
 const legacyPlay = /^\/play\/(?:frame|dialogue|clues)(?:\/(\d{1,4}))?$/; // the three separate games were merged into one daily quiz
 
@@ -95,11 +95,11 @@ ${body}
 
 // ----- the information pages -----
 const faq = [
-  ['What is Movie Games Adda?', 'A free Telugu movie quiz site. Besides the level-based games on the home page, it has one daily quiz that everyone plays at the same time: ten questions, alternating a film frame and a dialogue.'],
-  ['When does the daily quiz change?', 'At midnight India time (IST). Every player gets the same ten films on the same day, so you can compare scores with friends.'],
+  ['What is Movie Games Adda?', 'A free Telugu movie quiz site. Besides the level-based games on the home page, it has one daily quiz that everyone plays at the same time: seven questions, alternating a film frame and a dialogue.'],
+  ['When does the daily quiz change?', 'At midnight India time (IST). Every player gets the same seven films on the same day, so you can compare scores with friends.'],
   ['How many guesses do I get?', 'Three on every question. After a wrong guess you get another frame, another line or a hint such as the genre or the initials of the hero. You can also skip a question, which uses a guess.'],
   ['Can I type the movie name in Telugu?', 'Yes. Type in English or in Telugu script, or pick a film from the suggestions. Use the language switch to show film names in English or Telugu. Common spelling variations such as “Bahubali” or “Aravinda Sametha” are accepted.'],
-  ['How do streaks work?', 'Your streak counts days in a row that you finish all ten questions on the day they come out. Playing the archive does not add to the streak, but those scores do count in your stats.'],
+  ['How do streaks work?', 'Your streak counts days in a row that you finish all seven questions on the day they come out. Playing the archive does not add to the streak, but those scores do count in your stats.'],
   ['Do I need an account?', 'No. Your scores, streaks and stats are saved in your own browser. Clearing the browser data or switching device starts you fresh.'],
   ['How do I share my result?', 'When you finish, tap Copy result or share straight to WhatsApp or X. The result is a small grid of coloured squares that does not reveal any answer. Challenge a friend sends a link to the same day with your score.'],
   ['A film I love is missing. Can I suggest it?', 'Yes. Use the Suggest a film button on the daily page. Suggestions are read by hand and we add films when we have clear frames for them.'],
@@ -108,17 +108,17 @@ const faq = [
 const pages = {
   '/how-to-play': {
     title: 'How to Play the Daily Telugu Movie Quiz', current: 'how',
-    desc: 'How to play the daily Telugu movie quiz: ten questions, frames and dialogues, three guesses each, hints, streaks, sharing and the archive, with answers to common questions.',
+    desc: 'How to play the daily Telugu movie quiz: seven questions, frames and dialogues, three guesses each, hints, streaks, sharing and the archive, with answers to common questions.',
     body: `<h1>How to play</h1>
-<p class="lede">One daily Tollywood quiz. Ten questions, the same for everyone, new ones at midnight IST.</p>
-<h2>The ten questions</h2>
-<p>The questions alternate between a frame and a dialogue, five of each. For a frame you see one still from a Telugu film. For a dialogue you read a line from the film. Either way, type the name of the film. English or Telugu spelling both work, and the suggestions list helps.</p>
+<p class="lede">One daily Tollywood quiz. Seven questions, the same for everyone, new ones at midnight IST.</p>
+<h2>The seven questions</h2>
+<p>The questions alternate between a frame and a dialogue: four frames and three dialogues. For a frame you see one still from a Telugu film. For a dialogue you read a line from the film. Either way, type the name of the film. English or Telugu spelling both work, and the suggestions list helps.</p>
 <h2>Guesses and hints</h2>
 <p>You have three guesses on every question. Each wrong guess unlocks a new clue: another frame or another line, and after that hints such as the genre, the year and the initials of the director and hero. Not sure? You can skip a question, but that uses a guess.</p>
 <h2>Your score</h2>
-<p>After each question you see the answer, with the film\'s year, hero, director and music director. At the end you get a score out of 10 and a grid of coloured squares to share: green for a first-guess answer, yellow for a later answer and red for a miss.</p>
+<p>After each question you see the answer, with the film\'s year, hero, director and music director. At the end you get a score out of 7 and a grid of coloured squares to share: green for a first-guess answer, yellow for a later answer and red for a miss.</p>
 <h2>Streaks, stats and the archive</h2>
-<p>Finish the day\'s ten questions on the same day to keep your streak. The last 30 days stay open in the archive. All of it is saved in your browser, with no login.</p>
+<p>Finish the day\'s seven questions on the same day to keep your streak. The last 30 days stay open in the archive. All of it is saved in your browser, with no login.</p>
 <h2>Frequently asked questions</h2>
 ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <p><a class="btn primary" href="/play">Play today\'s quiz</a></p>`,
@@ -175,7 +175,7 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <p class="lede">What is new on Movie Games Adda.</p>
 <h2>15 November 2026: Daily Telugu movie quiz</h2>
 <ul>
-<li>One daily quiz of ten questions, alternating a film frame and a dialogue, with new films every day at midnight IST.</li>
+<li>One daily quiz of seven questions, alternating a film frame and a dialogue, with new films every day at midnight IST.</li>
 <li>Type the film name, with three guesses and a new clue after every miss.</li>
 <li>Share your score as a grid of coloured squares, send a challenge link, and keep streaks and stats in your browser.</li>
 <li>A 30-day archive, English and Telugu title switch, and a Suggest a film form.</li>

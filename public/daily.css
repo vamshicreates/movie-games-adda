@@ -154,8 +154,8 @@
 .hero .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .hero .hero-actions .btn { margin-top: 0; }
 
-/* The ten-question quiz */
-.q-strip { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; padding: 0; margin: 0 0 20px; list-style: none; }
+/* The seven-question quiz */
+.q-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0 0 20px; list-style: none; }
 .q-dot { display: grid; place-items: center; height: 34px; border-radius: 8px; background: var(--raised); color: var(--muted); font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .q-dot.is-current { background: var(--raised-hover); color: var(--text); box-shadow: 0 0 0 2px var(--text); }
 .q-dot.q-first { background: var(--green-fill); color: #fff; }
