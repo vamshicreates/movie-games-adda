@@ -485,6 +485,7 @@ async function admin(message = '') {
       <button class="btn secondary" id="new-industry" type="button">${icon('plus', 18)} Add industry</button>
     </div>
     <p class="status" role="status"></p>
+    <section class="panel reports-panel" aria-labelledby="reports-heading"><h2 id="reports-heading">Bug reports <span id="reports-count"></span></h2><div id="reports"><p class="muted">Loading reports…</p></div></section>
     <section class="panel set-library" aria-labelledby="sets-heading">
       <h2 id="sets-heading">Question sets <span>${library.sets.length}</span></h2>
       ${library.sets.length ? `<ul class="set-list">${library.sets.map(set => `<li><div><strong>${esc(set.title)}</strong><small>${esc(industryName(set.industry))} · ${esc(modes[set.mode].name)} · plays 7 questions</small></div><div class="set-actions"><span class="badge badge-${esc(set.status)}">${esc(set.status)}</span><button class="btn small secondary" type="button" data-open="${esc(set.id)}">${set.status === 'draft' ? 'Edit' : 'View'}</button>${set.status === 'live' ? `<button class="btn small secondary" type="button" data-archive="${esc(set.id)}">Archive</button>` : ''}</div></li>`).join('')}</ul>` : '<p>No sets yet. Create a set to get started.</p>'}
@@ -492,6 +493,7 @@ async function admin(message = '') {
     <dialog id="dialog"></dialog>
   </div>`;
   status(message);
+  loadReports();
   button('#logout', async () => { await post('/admin/logout'); await admin(); });
   button('#new', () => editSet(library));
   button('#import', () => importSets(library));
@@ -505,6 +507,36 @@ async function admin(message = '') {
       await admin('Set archived.');
     });
   })));
+}
+async function loadReports() {
+  const box = main.querySelector('#reports');
+  if (!box) return;
+  let data;
+  try { data = await api('/admin/reports'); }
+  catch (error) { box.innerHTML = `<p class="status error">${esc(error.message)}</p>`; return; }
+  const open = data.reports.filter(report => report.status === 'open').length;
+  main.querySelector('#reports-count').textContent = data.reports.length ? `${open} open · ${data.reports.length} total` : '';
+  const warning = data.durable ? '' : '<p class="reports-warning" role="alert"><strong>Reports are not saved permanently on this host.</strong> Vercel clears its disk often. Connect a Vercel Blob store to this project (Storage tab) so reports are kept. Until then, every report is also written to the Vercel runtime logs.</p>';
+  if (!data.reports.length) { box.innerHTML = `${warning}<p class="muted">No bug reports yet.</p>`; return; }
+  box.innerHTML = `${warning}<ul class="report-list">${data.reports.map(report => `<li class="report-item ${report.status}" data-id="${report.id}">
+    <div class="report-head"><span class="report-state">${report.status === 'fixed' ? 'Fixed' : 'Open'}</span><time datetime="${new Date(report.created).toISOString()}">${esc(new Date(report.created).toLocaleString())}</time><span class="report-page">${esc(report.page)}</span></div>
+    <p class="report-message">${esc(report.message)}</p>
+    ${report.contact ? `<p class="report-contact">From: ${esc(report.contact)}</p>` : ''}
+    ${report.hasShot ? `<a class="report-shot-link" href="/api/admin/reports/${report.id}/screenshot" target="_blank" rel="noopener"><img src="/api/admin/reports/${report.id}/screenshot" alt="Screenshot attached to this report" loading="lazy"></a>` : ''}
+    <div class="report-actions"><button class="btn secondary small" type="button" data-toggle="${report.status === 'fixed' ? 'open' : 'fixed'}">${report.status === 'fixed' ? 'Reopen' : 'Mark as fixed'}</button><button class="btn secondary small" type="button" data-delete>Delete</button></div>
+  </li>`).join('')}</ul>`;
+  box.querySelectorAll('[data-toggle]').forEach(el => el.addEventListener('click', action(el, async () => {
+    await post(`/admin/reports/${el.closest('li').dataset.id}/status`, { status: el.dataset.toggle });
+    await loadReports();
+  })));
+  box.querySelectorAll('[data-delete]').forEach(el => el.addEventListener('click', () => {
+    const id = el.closest('li').dataset.id;
+    showDialog('Delete this bug report?', '<p>The report and its screenshot will be removed. This cannot be undone.</p><button class="btn primary" type="submit">Delete report</button>', async () => {
+      await post(`/admin/reports/${id}/delete`);
+      main.querySelector('#dialog').close();
+      await loadReports();
+    });
+  }));
 }
 function showDialog(title, content, submit) {
   const dialog = main.querySelector('#dialog');

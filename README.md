@@ -50,3 +50,9 @@ The 24 levels come from `images_with_dialogues/` (collages of two to six frames 
 ## Pick or type
 
 Every game starts with a choice: pick from four options or type the answer. The daily quiz remembers the last choice (`prefs.mode` in `mga:v2`) and the level games remember it as `mga:format`. Daily questions carry four film choices chosen by a hash of the day and question, so everyone sees the same four in the same order; the clue itself never names the film.
+
+## Beta notice and bug reports
+
+Every page shows a Beta bar above the logo and a "Found a bug?" form above the footer (`public/beta.js`). Reports go to `POST /api/reports` (description, optional contact, optional screenshot shrunk in the browser; five per visitor per hour, with a hidden-field trap for bots). The admin panel (`/admin`) lists them with the screenshot, and can mark them fixed or delete them.
+
+Storage (`reports.js`): the SQLite file when the host has a disk. On Vercel the disk is temporary, so connect a **Vercel Blob** store to the project (Storage tab; this adds `BLOB_READ_WRITE_TOKEN`). A private store is the default; set `BLOB_ACCESS=public` only if the store was created as public. Without a store on Vercel, reports are still logged to the runtime logs and the admin panel shows a warning.

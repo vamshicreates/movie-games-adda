@@ -14,3 +14,4 @@
 /download_progress.log
 /downloader_state.json
 /download_all_tka.py
+node_modules/

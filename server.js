@@ -8,6 +8,7 @@ import { answerFormats, modes } from './public/modes.js';
 import { shuffle, starterAliases, starterSets } from './seed.js';
 import { guessIsCorrect } from './names.js';
 import { createDaily } from './daily.js';
+import { createReports } from './reports.js';
 import { originOf, render as renderSite } from './site.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -100,7 +101,7 @@ function bytesResponse(req, res, { type, length, stream, cache }) {
   stream(start, end);
 }
 
-export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, enforceSoon = true, clock = Date.now } = {}) {
+export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, enforceSoon = true, clock = Date.now, reportStore } = {}) {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec(`
@@ -303,11 +304,13 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
   }
 
   const daily = createDaily({ db, readJson, RequestError, json });
+  const reports = createReports({ db, readBody, RequestError, json, store: reportStore });
 
   async function api(req, res, path) {
     const get = req.method === 'GET';
     const post = req.method === 'POST';
     if (path.startsWith('/api/daily/') && (await daily.api(req, res, path, clock())) !== false) return;
+    if (path === '/api/reports' && (await reports.api(req, res, path, clock())) !== false) return;
     if (get && path === '/api/catalog') return json(res, catalog(player(req, res)));
     if (post && path === '/api/rounds') {
       const body = await readJson(req);
@@ -447,6 +450,7 @@ export function buildServer({ dbPath = ':memory:', adminPassword, seed = true, e
         setCookie(req, res, 'mga_admin', '', 0);
         return json(res, { ok: true });
       }
+      if (path.startsWith('/api/admin/reports') && (await reports.adminApi(req, res, path)) !== false) return;
       if (get && path === '/api/admin/suggestions') return json(res, { suggestions: daily.suggestions() });
       if (get && path === '/api/admin/library') return json(res, {
         industries: rows('SELECT * FROM industries ORDER BY name'),

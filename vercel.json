@@ -2,7 +2,7 @@
   "framework": null,
   "functions": {
     "api/index.js": {
-      "includeFiles": "{public/**,seed.js,songs-data.js,frames-data.js,daily-data.js,names.js,daily.js,site.js,server.js}"
+      "includeFiles": "{public/**,seed.js,songs-data.js,frames-data.js,daily-data.js,names.js,daily.js,reports.js,site.js,server.js}"
     }
   },
   "rewrites": [

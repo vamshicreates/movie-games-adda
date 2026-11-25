@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "dependencies": { "@vercel/blob": "^2.9.0" },
   "engines": { "node": ">=24" },
   "scripts": { "start": "node server.js", "test": "node --test" }
 }

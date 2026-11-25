@@ -49,7 +49,8 @@ export function head({ title, desc, path, origin, robots = 'index,follow' }) {
   <meta name="twitter:description" content="${esc(desc)}">
   <meta name="twitter:image" content="${esc(origin)}/og.png">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/daily.css">`;
+  <link rel="stylesheet" href="/daily.css">
+  <script type="module" src="/beta.js"></script>`;
 }
 
 export const header = (current = '') => `<a class="skip" href="#main">Skip to content</a>
@@ -154,6 +155,8 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
 <p>Movie names, stills and dialogue belong to their respective owners. They appear here only as small clues in a quiz, for commentary and entertainment. Movie Games Daily is not affiliated with, endorsed by, or sponsored by any film, studio or artist mentioned. If you own material and want it removed, see <a href="/credits">Credits and takedown</a>.</p>
 <h2>No guarantees</h2>
 <p>The games are provided as they are. We take care with film details but they can contain mistakes, and we do not promise the site will always be available. Use of the site is at your own risk.</p>
+<h2>Bug reports</h2>
+<p>If you send a bug report, we store what you wrote, the page you were on, your browser type, and any screenshot or email address you choose to add. Only the site owner can read reports. We use them to fix problems and may reply if you left a contact. Please do not include personal information in a screenshot. Ask us to delete a report at any time.</p>
 <h2>Your suggestions</h2>
 <p>If you suggest a film, you allow us to use the suggestion to improve the games. Do not include personal information in it.</p>
 <h2>Changes</h2>
@@ -177,6 +180,12 @@ ${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}
     title: 'Updates and Changelog', desc: 'What is new on Movie Games Daily: the daily Telugu movie games, streaks, sharing, the archive and more.',
     body: `<h1>Updates</h1>
 <p class="lede">What is new on Movie Games Daily.</p>
+<h2>25 November 2026: Beta</h2>
+<ul>
+<li>Movie Games Daily is now labelled Beta while we fix the last bugs.</li>
+<li>Found a bug? Use the new form above the footer to describe it and add a screenshot.</li>
+<li>Every level game now asks seven questions.</li>
+</ul>
 <h2>24 November 2026: Pick or type</h2>
 <ul>
 <li>Every game now lets you choose how to answer: pick from four options, or type it. Your choice starts the game that way.</li>
